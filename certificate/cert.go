@@ -11,6 +11,7 @@ import (
 // Cert wraps x509.Certificate for enhanced output
 type Cert struct {
 	x509.Certificate
+	verified bool
 }
 
 func New(pemData []byte) (*Cert, error) {
@@ -19,7 +20,7 @@ func New(pemData []byte) (*Cert, error) {
 		return nil, errors.ParseFailure
 	}
 
-	return &Cert{*cert}, nil
+	return &Cert{*cert, false}, nil
 }
 
 func (c *Cert) Name() string {
@@ -29,8 +30,10 @@ func (c *Cert) Name() string {
 func (c *Cert) Indent(indent string) string {
 	var b strings.Builder
 
-	fmt.Fprintf(&b, indent+"issuer: %s\n", c.Issuer)
+	fmt.Fprintf(&b, indent+"serial number: %s\n", c.SerialNumber)
 	fmt.Fprintf(&b, indent+"subject: %s\n", c.Subject)
+	fmt.Fprintf(&b, indent+"issuer: %s\n", c.Issuer)
+	fmt.Fprintf(&b, indent+"verified: %v\n", c.verified)
 
 	format := "2006-01-02 15:04:05"
 	fmt.Fprintf(&b, indent+"valid: from '%v' to '%v'\n",
