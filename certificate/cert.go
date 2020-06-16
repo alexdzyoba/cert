@@ -1,6 +1,7 @@
 package certificate
 
 import (
+	"bytes"
 	"crypto/x509"
 	"fmt"
 	"strings"
@@ -14,6 +15,7 @@ import (
 type Cert struct {
 	x509.Certificate
 	verified bool
+	root     bool
 }
 
 func New(pemData []byte) (*Cert, error) {
@@ -22,7 +24,28 @@ func New(pemData []byte) (*Cert, error) {
 		return nil, errors.ParseFailure
 	}
 
-	return &Cert{*cert, false}, nil
+	_, err = cert.Verify(x509.VerifyOptions{})
+	verified := err == nil
+
+	roots, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, err
+	}
+
+	return &Cert{
+		Certificate: *cert,
+		verified:    verified,
+		root:        matchRoots(cert, roots),
+	}, nil
+}
+
+func matchRoots(cert *x509.Certificate, roots *x509.CertPool) bool {
+	for _, r := range roots.Subjects() {
+		if bytes.Equal(r, cert.RawSubject) {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Cert) Name() string {
@@ -35,6 +58,8 @@ func (c *Cert) Indent(indent string) string {
 	fmt.Fprintf(&b, indent+"serial number: %s\n", c.SerialNumber)
 	fmt.Fprintf(&b, indent+"subject: %s\n", c.Subject)
 	fmt.Fprintf(&b, indent+"issuer: %s\n", c.Issuer)
+	fmt.Fprintf(&b, indent+"isCA: %v\n", c.IsCA)
+	fmt.Fprintf(&b, indent+"root: %v\n", c.root)
 
 	format := "2006-01-02 15:04:05"
 	fmt.Fprintf(&b, indent+"valid: from '%v' to '%v'\n",

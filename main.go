@@ -12,6 +12,7 @@ import (
 func main() {
 	filename := flag.String("f", "", "filename")
 	timeString := flag.String("t", "", "date and time in RFC3339 format")
+	noChain := flag.Bool("nochain", false, "disable chain validation")
 	flag.Parse()
 
 	data, err := ioutil.ReadFile(*filename)
@@ -27,6 +28,6 @@ func main() {
 		}
 	}
 
-	p := dump.Printer{Time: t}
+	p := dump.Printer{NoChain: *noChain, Time: t}
 	p.Dump(data)
 }
