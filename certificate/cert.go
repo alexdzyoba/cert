@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/fatih/color"
+
 	"github.com/alexdzyoba/cert/errors"
 )
 
@@ -33,13 +35,18 @@ func (c *Cert) Indent(indent string) string {
 	fmt.Fprintf(&b, indent+"serial number: %s\n", c.SerialNumber)
 	fmt.Fprintf(&b, indent+"subject: %s\n", c.Subject)
 	fmt.Fprintf(&b, indent+"issuer: %s\n", c.Issuer)
-	fmt.Fprintf(&b, indent+"verified: %v\n", c.verified)
 
 	format := "2006-01-02 15:04:05"
 	fmt.Fprintf(&b, indent+"valid: from '%v' to '%v'\n",
 		c.NotBefore.Local().Format(format),
 		c.NotAfter.Local().Format(format),
 	)
+
+	if c.verified {
+		fmt.Fprintf(&b, indent+"verified: %s\n", color.GreenString("✔"))
+	} else {
+		fmt.Fprintf(&b, indent+"verified: %s\n", color.RedString("✖"))
+	}
 
 	return b.String()
 }
