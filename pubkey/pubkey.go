@@ -7,7 +7,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 
-	"github.com/alexdzyoba/cert/errors"
+	"github.com/pkg/errors"
 )
 
 type Type int
@@ -44,7 +44,7 @@ type PublicKey struct {
 func New(pemData []byte) (*PublicKey, error) {
 	pub, err := x509.ParsePKIXPublicKey(pemData)
 	if err != nil {
-		return nil, errors.ParseFailure
+		return nil, errors.Wrap(err, "parse public key")
 	}
 
 	var typ Type

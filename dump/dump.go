@@ -1,58 +1,37 @@
 package dump
 
 import (
-	"encoding/pem"
-	"log"
-	"time"
+	"fmt"
 
-	"github.com/alexdzyoba/cert/certificate"
-	"github.com/alexdzyoba/cert/pubkey"
+	"github.com/alexdzyoba/cert/parser"
 )
 
 type Printer struct {
 	NoChain bool
-	Time    time.Time
-
-	chain []*certificate.Cert
 }
 
-func (p *Printer) Dump(data []byte) {
-	// Parse every PEM block and print it
-	blockIndex := 0
-	for block, rest := pem.Decode(data); block != nil; block, rest = pem.Decode(rest) {
-		switch block.Type {
-		case "PUBLIC KEY":
-			pub, err := pubkey.New(block.Bytes)
-			if err != nil {
-				log.Println(err)
-			}
-
-			Print(blockIndex, pub)
-			blockIndex++
-
-		case "CERTIFICATE":
-			crt, err := certificate.New(block.Bytes)
-			if err != nil {
-				log.Println("certificate dump error: ", err)
-			}
-
-			if p.NoChain {
-				Print(blockIndex, crt)
-				blockIndex++
-			} else {
-				p.chain = append(p.chain, crt)
-			}
-		default:
-			log.Printf("skipping unknown type %s\n", block.Type)
-		}
-	}
-
-	if !p.NoChain {
-		err := certificate.VerifyChain(p.chain, p.Time)
-		if err != nil {
-			log.Println("chain verify error: ", err)
+func (p *Printer) Dump(entities []*parser.Entity) {
+	level := "  "
+	for i, e := range entities {
+		v, ok := e.Val.(Formatter)
+		if !ok {
+			// log.Printf("cannot dump value of type %v", e.Type)
+			continue
 		}
 
-		PrintChain(p.chain)
+		fmt.Printf("[%d] %s:\n", i, v.Name())
+		fmt.Printf("%s\n", v.Indent(level))
+		if !p.NoChain {
+			level += "  "
+		}
 	}
+}
+
+// Formatter describe type that can be formatted for output
+type Formatter interface {
+	// Name returns type name
+	Name() string
+
+	// Indent returns type in a simple indented format
+	Indent(intent string) string
 }

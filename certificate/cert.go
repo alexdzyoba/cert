@@ -7,8 +7,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-
-	"github.com/alexdzyoba/cert/errors"
+	"github.com/pkg/errors"
 )
 
 // Cert wraps x509.Certificate for enhanced output
@@ -21,7 +20,7 @@ type Cert struct {
 func New(pemData []byte) (*Cert, error) {
 	cert, err := x509.ParseCertificate(pemData)
 	if err != nil {
-		return nil, errors.ParseFailure
+		return nil, errors.Wrap(err, "parse certificate")
 	}
 
 	_, err = cert.Verify(x509.VerifyOptions{})

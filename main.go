@@ -6,7 +6,9 @@ import (
 	"log"
 	"time"
 
+	"github.com/alexdzyoba/cert/certificate"
 	"github.com/alexdzyoba/cert/dump"
+	"github.com/alexdzyoba/cert/parser"
 )
 
 func main() {
@@ -28,6 +30,30 @@ func main() {
 		}
 	}
 
-	p := dump.Printer{NoChain: *noChain, Time: t}
-	p.Dump(data)
+	// parse
+	entities, err := parser.Parse(data)
+	if err != nil {
+		log.Fatal("failed to parse input data: ", err)
+	}
+
+	if len(entities) > 1 && !*noChain {
+		verifyChain(entities, t)
+	}
+
+	// dump
+	p := dump.Printer{NoChain: *noChain}
+	p.Dump(entities)
+}
+
+func verifyChain(entities []*parser.Entity, t time.Time) {
+	var certs []*certificate.Cert
+
+	for _, e := range entities {
+		cert, ok := e.Val.(*certificate.Cert)
+		if ok {
+			certs = append(certs, cert)
+		}
+	}
+
+	certificate.VerifyChain(certs, t)
 }

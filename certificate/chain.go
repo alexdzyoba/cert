@@ -8,17 +8,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-func VerifyChain(chain []*Cert, t time.Time) error {
+func VerifyChain(chain []*Cert, t time.Time) {
 	for i := len(chain) - 1; i >= 0; i-- {
 		err := verifyChainPart(chain[i:], t)
 		if err == nil {
 			chain[i].verified = true
 		} else {
-			log.Printf("failed to verify chain part at root %s", chain[i].Subject)
+			log.Printf("failed to verify chain part at %s: %v", chain[i].Subject, err)
 		}
 	}
-
-	return nil
 }
 
 // verifyChainPart iterates over slice of certificates in chain
