@@ -14,11 +14,19 @@ import (
 type Cert struct {
 	x509.Certificate
 	verified bool
-	root     bool
+	isRoot   bool
 }
 
-func New(pemData []byte) (*Cert, error) {
-	cert, err := x509.ParseCertificate(pemData)
+func FromX509Cert(c *x509.Certificate) *Cert {
+	return &Cert{
+		Certificate: *c,
+		verified:    false,
+		isRoot:      false,
+	}
+}
+
+func FromBytes(bytes []byte) (*Cert, error) {
+	cert, err := x509.ParseCertificate(bytes)
 	if err != nil {
 		return nil, errors.Wrap(err, "parse certificate")
 	}
@@ -34,7 +42,7 @@ func New(pemData []byte) (*Cert, error) {
 	return &Cert{
 		Certificate: *cert,
 		verified:    verified,
-		root:        matchRoots(cert, roots),
+		isRoot:      matchRoots(cert, roots),
 	}, nil
 }
 
@@ -58,7 +66,7 @@ func (c *Cert) Indent(indent string) string {
 	fmt.Fprintf(&b, indent+"subject: %s\n", c.Subject)
 	fmt.Fprintf(&b, indent+"issuer: %s\n", c.Issuer)
 	fmt.Fprintf(&b, indent+"isCA: %v\n", c.IsCA)
-	fmt.Fprintf(&b, indent+"root: %v\n", c.root)
+	fmt.Fprintf(&b, indent+"root: %v\n", c.isRoot)
 
 	format := "2006-01-02 15:04:05"
 	fmt.Fprintf(&b, indent+"valid: from '%v' to '%v'\n",

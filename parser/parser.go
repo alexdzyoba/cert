@@ -35,7 +35,7 @@ func Parse(data []byte) ([]*Entity, error) {
 			entities = append(entities, &Entity{BlockTypePublicKey, pub})
 
 		case "CERTIFICATE":
-			crt, err := certificate.New(block.Bytes)
+			crt, err := certificate.FromBytes(block.Bytes)
 			if err != nil {
 				return nil, errors.Wrap(err, "parsing certificate")
 			}
