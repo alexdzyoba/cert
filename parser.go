@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func Parse(data []byte) ([]*Cert, error) {
+func Parse(data []byte) (Certs, error) {
 	certs := make([]*Cert, 0)
 	for block, rest := pem.Decode(data); block != nil; block, rest = pem.Decode(rest) {
 		if block.Type == "CERTIFICATE" {

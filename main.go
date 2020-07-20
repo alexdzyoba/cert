@@ -2,22 +2,28 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"time"
 )
 
 func main() {
-	timeString := flag.String("time", "", "date and time in RFC3339 format")
-	noChain := flag.Bool("nochain", false, "disable chain validation")
+	var (
+		timeString string
+		noVerify   bool
+	)
+
+	flag.StringVar(&timeString, "time", "", "date and time in RFC3339 format")
+	flag.BoolVar(&noVerify, "noverify", false, "disable chain validation")
 	flag.Parse()
 
 	var err error
 
-	// Load time
+	// Override time from flag
 	t := time.Now()
-	if *timeString != "" {
-		t, err = time.Parse(time.RFC3339, *timeString)
+	if timeString != "" {
+		t, err = time.Parse(time.RFC3339, timeString)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -25,7 +31,7 @@ func main() {
 
 	resource := flag.Args()[0]
 
-	var certs []*Cert
+	var certs Certs
 
 	// Decide where to load certs from
 	_, err = os.Stat(resource)
@@ -39,9 +45,10 @@ func main() {
 	}
 
 	// Verify cert chain by default
-	if len(certs) > 1 && !*noChain {
-		VerifyChain(certs, t)
+	if len(certs) > 1 && !noVerify {
+		chain := NewChain(certs, t)
+		fmt.Println(chain)
+	} else {
+		fmt.Println(certs)
 	}
-
-	Dump(certs, *noChain)
 }

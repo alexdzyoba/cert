@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func fromURL(URL string) ([]*Cert, error) {
+func fromURL(URL string) (Certs, error) {
 	addr, err := addrFromString(URL)
 	if err != nil {
 		return nil, errors.Wrap(err, "building addr")
@@ -26,7 +26,7 @@ func fromURL(URL string) ([]*Cert, error) {
 		return nil, errors.Wrapf(err, "failed to connect to %v", URL)
 	}
 
-	var certs []*Cert
+	var certs Certs
 	for _, c := range conn.ConnectionState().PeerCertificates {
 		certs = append(certs, FromX509Cert(c))
 	}
@@ -34,7 +34,7 @@ func fromURL(URL string) ([]*Cert, error) {
 	return certs, nil
 }
 
-func fromFile(filename string) ([]*Cert, error) {
+func fromFile(filename string) (Certs, error) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil && !os.IsNotExist(err) {
 		log.Fatal(err)

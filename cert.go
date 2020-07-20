@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/pkg/errors"
 )
 
@@ -55,25 +54,28 @@ func matchRoots(cert *x509.Certificate, roots *x509.CertPool) bool {
 	return false
 }
 
-func (c *Cert) Indent(indent string) string {
+// Certs represent simple list of certificates that doesn't form chain like the
+// list of root certs. It has its own simple string serialization.
+type Certs []*Cert
+
+func (cs Certs) String() string {
 	var b strings.Builder
+	for i, c := range cs {
+		fmt.Fprintf(&b, "[%d] Certificate:\n", i)
 
-	fmt.Fprintf(&b, indent+"serial number: %s\n", c.SerialNumber)
-	fmt.Fprintf(&b, indent+"subject: %s\n", c.Subject)
-	fmt.Fprintf(&b, indent+"issuer: %s\n", c.Issuer)
-	fmt.Fprintf(&b, indent+"isCA: %v\n", c.IsCA)
-	fmt.Fprintf(&b, indent+"root: %v\n", c.isRoot)
+		fmt.Fprintf(&b, "serial number: %s\n", c.SerialNumber)
+		fmt.Fprintf(&b, "subject: %s\n", c.Subject)
+		fmt.Fprintf(&b, "issuer: %s\n", c.Issuer)
+		fmt.Fprintf(&b, "isCA: %v\n", c.IsCA)
+		fmt.Fprintf(&b, "root: %v\n", c.isRoot)
 
-	format := "2006-01-02 15:04:05"
-	fmt.Fprintf(&b, indent+"valid: from '%v' to '%v'\n",
-		c.NotBefore.Local().Format(format),
-		c.NotAfter.Local().Format(format),
-	)
+		format := "2006-01-02 15:04:05"
+		fmt.Fprintf(&b, "valid: from '%v' to '%v'\n",
+			c.NotBefore.Local().Format(format),
+			c.NotAfter.Local().Format(format),
+		)
 
-	if c.verified {
-		fmt.Fprintf(&b, indent+"verified: %s\n", color.GreenString("✔"))
-	} else {
-		fmt.Fprintf(&b, indent+"verified: %s\n", color.RedString("✖"))
+		fmt.Fprintln(&b)
 	}
 
 	return b.String()
