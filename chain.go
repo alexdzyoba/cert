@@ -1,4 +1,4 @@
-package certificate
+package main
 
 import (
 	"crypto/x509"

@@ -1,4 +1,4 @@
-package certificate
+package main
 
 import (
 	"bytes"
@@ -53,10 +53,6 @@ func matchRoots(cert *x509.Certificate, roots *x509.CertPool) bool {
 		}
 	}
 	return false
-}
-
-func (c *Cert) Name() string {
-	return "Certificate"
 }
 
 func (c *Cert) Indent(indent string) string {
