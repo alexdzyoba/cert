@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/tls"
+	"encoding/pem"
 	"io"
 	"io/ioutil"
 	"net"
@@ -43,7 +44,19 @@ func fromReader(r io.Reader) (Certs, error) {
 		return nil, errors.Wrap(err, "failed to read")
 	}
 
-	return Parse(data)
+	certs := make([]*Cert, 0)
+	for block, rest := pem.Decode(data); block != nil; block, rest = pem.Decode(rest) {
+		if block.Type == "CERTIFICATE" {
+			cert, err := FromBytes(block.Bytes)
+			if err != nil {
+				return nil, errors.Wrap(err, "parsing certificate")
+			}
+
+			certs = append(certs, cert)
+		}
+	}
+
+	return certs, nil
 }
 
 func addrFromString(s string) (string, error) {
