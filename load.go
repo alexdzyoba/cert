@@ -15,7 +15,7 @@ import (
 )
 
 func fromURL(URL string) (Certs, error) {
-	addr, err := addrFromString(URL)
+	addr, err := buildTLSAddr(URL)
 	if err != nil {
 		return nil, errors.Wrap(err, "building addr")
 	}
@@ -59,7 +59,9 @@ func fromReader(r io.Reader) (Certs, error) {
 	return certs, nil
 }
 
-func addrFromString(s string) (string, error) {
+// buildTLSAddr creates address suitable for tls.DialWithDialer from s
+func buildTLSAddr(s string) (string, error) {
+	// Ensure "//" for url.Parse
 	match, err := regexp.MatchString(`(https?:)?//`, s)
 	if err != nil {
 		return "", errors.Wrap(err, "matching URL")
@@ -69,6 +71,7 @@ func addrFromString(s string) (string, error) {
 		s = "//" + s
 	}
 
+	// Parse as URL and leave only host with port 443
 	u, err := url.Parse(s)
 	if err != nil {
 		return "", errors.Wrap(err, "parsing URL")
