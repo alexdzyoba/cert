@@ -16,14 +16,16 @@ type Chain []*Cert
 
 // NewChain builds a certificate chain from certs and verifies it using given
 // time t.
-func NewChain(certs Certs, t time.Time) Chain {
+func NewChain(certs Certs, t time.Time, verbose bool) Chain {
 	ch := Chain(certs)
 	for i := len(ch) - 1; i >= 0; i-- {
 		err := verifyChainPart(ch[i:], t)
 		if err == nil {
 			ch[i].verified = true
 		} else {
-			log.Printf("failed to verify chain part at %s: %v", ch[i].Subject, err)
+			if verbose {
+				log.Printf("failed to verify chain part at %s: %v", ch[i].Subject, err)
+			}
 		}
 	}
 
