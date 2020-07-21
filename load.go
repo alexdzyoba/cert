@@ -28,7 +28,11 @@ func fromURL(URL string) (Certs, error) {
 
 	var certs Certs
 	for _, c := range conn.ConnectionState().PeerCertificates {
-		certs = append(certs, FromX509Cert(c))
+		cert, err := FromX509Cert(c)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse cert")
+		}
+		certs = append(certs, cert)
 	}
 
 	return certs, nil

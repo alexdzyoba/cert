@@ -16,12 +16,17 @@ type Cert struct {
 	isRoot   bool
 }
 
-func FromX509Cert(c *x509.Certificate) *Cert {
-	return &Cert{
-		Certificate: *c,
-		verified:    false,
-		isRoot:      false,
+func FromX509Cert(cert *x509.Certificate) (*Cert, error) {
+	roots, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, err
 	}
+
+	return &Cert{
+		Certificate: *cert,
+		verified:    false,
+		isRoot:      matchRoots(cert, roots),
+	}, nil
 }
 
 func FromBytes(bytes []byte) (*Cert, error) {
