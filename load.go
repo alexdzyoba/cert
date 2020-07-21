@@ -2,10 +2,10 @@ package main
 
 import (
 	"crypto/tls"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/url"
-	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -37,10 +37,10 @@ func fromURL(URL string) (Certs, error) {
 	return certs, nil
 }
 
-func fromFile(filename string) (Certs, error) {
-	data, err := ioutil.ReadFile(filename)
-	if err != nil && !os.IsNotExist(err) {
-		return nil, errors.Wrap(err, "failed to read file")
+func fromReader(r io.Reader) (Certs, error) {
+	data, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read")
 	}
 
 	return Parse(data)
