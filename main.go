@@ -12,12 +12,12 @@ import (
 func main() {
 	var (
 		timeString string
-		noVerify   bool
+		noChain    bool
 		verbose    bool
 	)
 
 	flag.StringVar(&timeString, "time", "", "date and time in RFC3339 format")
-	flag.BoolVar(&noVerify, "noverify", false, "disable chain validation")
+	flag.BoolVar(&noChain, "nochain", false, "disable chain validation")
 	flag.BoolVar(&verbose, "v", false, "verbose output")
 	flag.Parse()
 
@@ -48,7 +48,7 @@ func main() {
 	}
 
 	// Verify cert chain by default
-	if len(certs) > 1 && !noVerify {
+	if len(certs) > 1 && !noChain {
 		chain := NewChain(certs, t, verbose)
 		fmt.Println(chain)
 	} else {
