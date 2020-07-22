@@ -1,0 +1,27 @@
+[0] Certificate:
+  serial number: 8151063296760904526
+  subject: CN=www.google.com,O=Google Inc,L=Mountain View,ST=California,C=US
+  issuer: CN=Google Internet Authority G2,O=Google Inc,C=US
+  isCA: false
+  root: false
+  valid: from '2014-03-12 13:38:30' to '2014-06-10 04:00:00'
+  verified: [32m✔[0m
+
+[1] Certificate:
+    serial number: 146025
+    subject: CN=Google Internet Authority G2,O=Google Inc,C=US
+    issuer: CN=GeoTrust Global CA,O=GeoTrust Inc.,C=US
+    isCA: true
+    root: false
+    valid: from '2013-04-05 19:15:55' to '2015-04-04 18:15:55'
+    verified: [32m✔[0m
+
+[2] Certificate:
+      serial number: 144470
+      subject: CN=GeoTrust Global CA,O=GeoTrust Inc.,C=US
+      issuer: CN=GeoTrust Global CA,O=GeoTrust Inc.,C=US
+      isCA: true
+      root: true
+      valid: from '2002-05-21 08:00:00' to '2022-05-21 07:00:00'
+      verified: [32m✔[0m
+
