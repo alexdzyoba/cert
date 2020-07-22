@@ -16,10 +16,21 @@ func main() {
 		verbose    bool
 	)
 
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [options] <file or URL>\n", os.Args[0])
+		fmt.Fprintf(flag.CommandLine.Output(), "\nOptions:\n")
+		flag.PrintDefaults()
+	}
+
 	flag.StringVar(&timeString, "time", "", "date and time in RFC3339 format")
 	flag.BoolVar(&noChain, "nochain", false, "disable chain validation")
 	flag.BoolVar(&verbose, "v", false, "verbose output")
 	flag.Parse()
+
+	if len(flag.Args()) != 1 {
+		flag.Usage()
+		os.Exit(1)
+	}
 
 	var err error
 
