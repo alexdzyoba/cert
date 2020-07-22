@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -45,15 +44,7 @@ func main() {
 
 	resource := flag.Args()[0]
 
-	var certs Certs
-
-	// Decide where to load certs from
-	f, err := os.Open(resource)
-	if errors.Is(err, os.ErrNotExist) {
-		certs, err = fromURL(resource)
-	} else {
-		certs, err = fromReader(f)
-	}
+	certs, err := load(resource)
 	if err != nil {
 		log.Fatal(err)
 	}

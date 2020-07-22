@@ -7,12 +7,29 @@ import (
 	"io/ioutil"
 	"net"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 )
+
+// load decide where to load certs from
+func load(resource string) (Certs, error) {
+	var certs Certs
+	f, err := os.Open(resource)
+	if errors.Is(err, os.ErrNotExist) {
+		certs, err = fromURL(resource)
+	} else {
+		certs, err = fromReader(f)
+	}
+	if err != nil {
+		return nil, errors.Wrap(err, "loading certs")
+	}
+
+	return certs, nil
+}
 
 func fromURL(URL string) (Certs, error) {
 	addr, err := buildTLSAddr(URL)
