@@ -38,15 +38,18 @@ func fromURL(URL string) (Certs, error) {
 	return certs, nil
 }
 
+// fromReader parses PEM-encoded certificates from io.Reader r
 func fromReader(r io.Reader) (Certs, error) {
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read")
 	}
 
+	const PEMCertType = "CERTIFICATE"
+
 	certs := make([]*Cert, 0)
 	for block, rest := pem.Decode(data); block != nil; block, rest = pem.Decode(rest) {
-		if block.Type == "CERTIFICATE" {
+		if block.Type == PEMCertType {
 			cert, err := FromBytes(block.Bytes)
 			if err != nil {
 				return nil, errors.Wrap(err, "parsing certificate")
