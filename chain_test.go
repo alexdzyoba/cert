@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/andreyvit/diff"
 	"github.com/fatih/color"
 )
 
@@ -44,8 +45,7 @@ func TestChainString(t *testing.T) {
 		want := string(wantBytes)
 
 		if got != want {
-			t.Errorf("%s serialization doesn't match golden file %s", filename, golden)
-			t.Errorf("got %s\nwant %s\n", got, want)
+			t.Errorf("%s serialization doesn't match golden file %s:\n%v", filename, golden, diff.LineDiff(want, got))
 		}
 	}
 }

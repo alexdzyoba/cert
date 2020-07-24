@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+
+	"github.com/andreyvit/diff"
 )
 
 func TestMatchRoots(t *testing.T) {
@@ -67,7 +69,7 @@ func TestCertString(t *testing.T) {
 		want := string(wantBytes)
 
 		if got != want {
-			t.Errorf("%s serialization doesn't match golden file %s", filename, golden)
+			t.Errorf("%s serialization doesn't match golden file %s:\n%v", filename, golden, diff.LineDiff(want, got))
 		}
 	}
 }
