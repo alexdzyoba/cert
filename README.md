@@ -23,3 +23,7 @@ Or from URL:
 ## Installation
 
 Download the file from the [latest release](https://github.com/alexdzyoba/cert/releases/latest).
+
+## TODO
+
+- [ ] Put full chain of certs into testdata to fixate root certs

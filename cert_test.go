@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/andreyvit/diff"
 )
@@ -46,6 +47,13 @@ func TestCertString(t *testing.T) {
 		"addtrust.crt",
 		"letsencrypt-fullchain.pem",
 	}
+
+	// Set timezone to fixate serialization of datetime
+	loc, err := time.LoadLocation("UTC")
+	if err != nil {
+		t.Fatal(err)
+	}
+	time.Local = loc
 
 	for _, f := range testFiles {
 		filename := filepath.Join("testdata", f)

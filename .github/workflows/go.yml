@@ -7,10 +7,9 @@ on:
     branches: [ master ]
 
 jobs:
-
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
 
     - name: Set up Go 1.x
@@ -22,11 +21,10 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
 
-    - name: Get dependencies
-      run: go get -v -t -d ./...
+    - run: go get -v -t -d ./...
+    - run: go build -v .
 
-    - name: Build
-      run: go build -v .
+    - name: Install root certs in older version because of testdata
+      run: sudo apt-get update && sudo apt-get install -y --allow-downgrades ca-certificates=20190110ubuntu1
 
-    - name: Test
-      run: go test -v .
+    - run: go test -v .

@@ -20,6 +20,13 @@ func TestChainString(t *testing.T) {
 		},
 	}
 
+	// Set timezone to fixate serialization of datetime
+	loc, err := time.LoadLocation("UTC")
+	if err != nil {
+		t.Fatal(err)
+	}
+	time.Local = loc
+
 	for _, c := range testCases {
 		filename := filepath.Join("testdata", c.filename)
 		golden := filepath.Join("testdata", c.filename+".golden")
