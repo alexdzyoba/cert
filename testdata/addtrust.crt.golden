@@ -3,6 +3,8 @@ serial number: 1
 subject: CN=AddTrust External CA Root,OU=AddTrust External TTP Network,O=AddTrust AB,C=SE
 issuer: CN=AddTrust External CA Root,OU=AddTrust External TTP Network,O=AddTrust AB,C=SE
 isCA: true
-root: false
-valid: from '2000-05-30 10:48:38' to '2020-05-30 10:48:38'
-
+root: true
+valid:
+  from: 2000-05-30 10:48:38
+  to  : 2020-05-30 10:48:38
+verified: ✔
