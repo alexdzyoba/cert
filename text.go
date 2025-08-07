@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"crypto/x509/pkix"
 	"fmt"
 	"math"
@@ -96,6 +97,7 @@ func (p TextBundlePrinter) printCert(cert *Cert) string {
 	if p.level >= LevelVerbose {
 		// Render serial as bytes for compatibility with openssl
 		t.Row("Serial", ":", fmt.Sprintf("%X", cert.SerialNumber.Bytes()))
+		t.Row("Fingerprint", ":", fmt.Sprintf("%X", sha256.Sum256(cert.Raw)))
 	}
 
 	if p.level >= LevelFull {
