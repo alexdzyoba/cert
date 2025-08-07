@@ -1,0 +1,207 @@
+┌─────────────────┐
+│ *.google.com ✅ │
+└─────────────────┘                                                                                  
+ Subject      :  CN=*.google.com                                                  
+ Issuer       :  CN=WR2,O=Google Trust Services,C=US                              
+ Valid        :  ✅                                                               
+   From       :  2025-07-07T08:34:03Z                                             
+   To         :  2025-09-29T08:34:02Z                                             
+ Features     :  DNS SANs                                                         
+ Serial       :  4EC2C0CFFEB61D6309244D58A1A1CA37                                 
+ Fingerprint  :  F700C97434575EBE70A70ED29BA82D44F1CE1455C3D9063F836895A1C6B57F26 
+ Signature    :  1E06A58E4B616A47D08812C08D6521FD38EEBDDD553DAA067A42F0E15B2B2DD8 
+                 3AEC9EDC335E28B91A48F1E70717FAF0F2DE75717D776CFBA1728F5687B15F05 
+                 CD00FAF40EA762FC3A75ADD6A00924B29B4C496F86878B83522B524635F54CC4 
+                 FEEA76B096050F9A3F485CC02613122D074E60D15B5300273727925335314996 
+                 E7F63CBF2F5766E766DF5679292A0DAB09AE682FF1684BE0F22482EDD457F32D 
+                 71D20B7EEEC3E793519C488BB50C7ED4661C48C8402714FE8709A00A3CEBB63B 
+                 AA2174B9C59E050FD7560A5E0801AEB809D99EEFBFCDB24A2EAAEBA38663E84E 
+                 621A9D0ABA503EED2CDA93389515313FE2CBA6BB119EB1F1E0CB14D349034C20 
+                                                                                  
+ DNS SANs:                              
+ - *.google.com                         
+ - *.appengine.google.com               
+ - *.bdn.dev                            
+ - *.origin-test.bdn.dev                
+ - *.cloud.google.com                   
+ - *.crowdsource.google.com             
+ - *.datacompute.google.com             
+ - *.google.ca                          
+ - *.google.cl                          
+ - *.google.co.in                       
+ - *.google.co.jp                       
+ - *.google.co.uk                       
+ - *.google.com.ar                      
+ - *.google.com.au                      
+ - *.google.com.br                      
+ - *.google.com.co                      
+ - *.google.com.mx                      
+ - *.google.com.tr                      
+ - *.google.com.vn                      
+ - *.google.de                          
+ - *.google.es                          
+ - *.google.fr                          
+ - *.google.hu                          
+ - *.google.it                          
+ - *.google.nl                          
+ - *.google.pl                          
+ - *.google.pt                          
+ - *.googleapis.cn                      
+ - *.googlevideo.com                    
+ - *.gstatic.cn                         
+ - *.gstatic-cn.com                     
+ - googlecnapps.cn                      
+ - *.googlecnapps.cn                    
+ - googleapps-cn.com                    
+ - *.googleapps-cn.com                  
+ - gkecnapps.cn                         
+ - *.gkecnapps.cn                       
+ - googledownloads.cn                   
+ - *.googledownloads.cn                 
+ - recaptcha.net.cn                     
+ - *.recaptcha.net.cn                   
+ - recaptcha-cn.net                     
+ - *.recaptcha-cn.net                   
+ - widevine.cn                          
+ - *.widevine.cn                        
+ - ampproject.org.cn                    
+ - *.ampproject.org.cn                  
+ - ampproject.net.cn                    
+ - *.ampproject.net.cn                  
+ - google-analytics-cn.com              
+ - *.google-analytics-cn.com            
+ - googleadservices-cn.com              
+ - *.googleadservices-cn.com            
+ - googlevads-cn.com                    
+ - *.googlevads-cn.com                  
+ - googleapis-cn.com                    
+ - *.googleapis-cn.com                  
+ - googleoptimize-cn.com                
+ - *.googleoptimize-cn.com              
+ - doubleclick-cn.net                   
+ - *.doubleclick-cn.net                 
+ - *.fls.doubleclick-cn.net             
+ - *.g.doubleclick-cn.net               
+ - doubleclick.cn                       
+ - *.doubleclick.cn                     
+ - *.fls.doubleclick.cn                 
+ - *.g.doubleclick.cn                   
+ - dartsearch-cn.net                    
+ - *.dartsearch-cn.net                  
+ - googletraveladservices-cn.com        
+ - *.googletraveladservices-cn.com      
+ - googletagservices-cn.com             
+ - *.googletagservices-cn.com           
+ - googletagmanager-cn.com              
+ - *.googletagmanager-cn.com            
+ - googlesyndication-cn.com             
+ - *.googlesyndication-cn.com           
+ - *.safeframe.googlesyndication-cn.com 
+ - app-measurement-cn.com               
+ - *.app-measurement-cn.com             
+ - gvt1-cn.com                          
+ - *.gvt1-cn.com                        
+ - gvt2-cn.com                          
+ - *.gvt2-cn.com                        
+ - 2mdn-cn.net                          
+ - *.2mdn-cn.net                        
+ - googleflights-cn.net                 
+ - *.googleflights-cn.net               
+ - admob-cn.com                         
+ - *.admob-cn.com                       
+ - googlesandbox-cn.com                 
+ - *.googlesandbox-cn.com               
+ - *.safenup.googlesandbox-cn.com       
+ - *.gstatic.com                        
+ - *.metric.gstatic.com                 
+ - *.gvt1.com                           
+ - *.gcpcdn.gvt1.com                    
+ - *.gvt2.com                           
+ - *.gcp.gvt2.com                       
+ - *.url.google.com                     
+ - *.youtube-nocookie.com               
+ - *.ytimg.com                          
+ - ai.android                           
+ - android.com                          
+ - *.android.com                        
+ - *.flash.android.com                  
+ - g.cn                                 
+ - *.g.cn                               
+ - g.co                                 
+ - *.g.co                               
+ - goo.gl                               
+ - www.goo.gl                           
+ - google-analytics.com                 
+ - *.google-analytics.com               
+ - google.com                           
+ - googlecommerce.com                   
+ - *.googlecommerce.com                 
+ - ggpht.cn                             
+ - *.ggpht.cn                           
+ - urchin.com                           
+ - *.urchin.com                         
+ - youtu.be                             
+ - youtube.com                          
+ - *.youtube.com                        
+ - music.youtube.com                    
+ - *.music.youtube.com                  
+ - youtubeeducation.com                 
+ - *.youtubeeducation.com               
+ - youtubekids.com                      
+ - *.youtubekids.com                    
+ - yt.be                                
+ - *.yt.be                              
+ - android.clients.google.com           
+ - *.android.google.cn                  
+ - *.chrome.google.cn                   
+ - *.developers.google.cn               
+ - *.aistudio.google.com                
+
+┌────────┐
+│ WR2 ✅ │
+└────────┘                                                                                  
+ Subject      :  CN=WR2,O=Google Trust Services,C=US                              
+ Issuer       :  CN=GTS Root R1,O=Google Trust Services LLC,C=US                  
+ Valid        :  ✅                                                               
+   From       :  2023-12-13T09:00:00Z                                             
+   To         :  2029-02-20T14:00:00Z                                             
+ Features     :  CA                                                               
+ Serial       :  7FF005A07C4CDED100AD9D66A5107B98                                 
+ Fingerprint  :  E6FE22BF45E4F0D3B85C59E02C0F495418E1EB8D3210F788D48CD5E1CB547CD4 
+ Signature    :  45758BE51F3B4413961AAB58F135C96F3DD2D0334A8633BA57514FEEC434DA16 
+                 124CBF139F0DD454E94879C0303C9425F21AF4BA3294B633720B85EE09112534 
+                 94E16F42DB829B7B7F2A9AA9FF7FA9D2DE4A20CBB3FB0303B8F80705DA59922F 
+                 184698CEAF72BE2426B11E004DBD08AD9341440ABBC7D50185BF9357E3DF7412 
+                 530E1125D39BDCDECB276EB3C2B9336239C2E035E15BA7092E19CB912A765CF1 
+                 DFCA238440A56FFF9A41E0B5EF32D185AEAF2509F062C56EC2C86E32FDB8DAE2 
+                 CE4A914AF385554EB175D648332F6F84D9125C9FD4719863258D695C0A6B7DF2 
+                 41BDE8BB8FE422D79D6545E84C0A87DAE96066880E1FC7E14E56C576FFB47A57 
+                 69F202220926411DDA74A2E529F3C49AE55DD6AA7AFDE1B72B6638FBE82966BA 
+                 EFA0132FF8737EF0DA40111C5DDD8FA6FCBEDBBE56F8329C1F41416D7EB6C5EB 
+                 C68B36B7178C9DCF197A349F2193C47E7435D2AAFD4C6D14F5C9B0795B493CF3 
+                 BF1748E8EF9A26130C87F273D69CC5526B63F7329078A96BEB5ED693A1BFBC18 
+                 3D8B59F68AC6055E5218E266E0DAC1DCAD5A25AAF445FCF10B78A4AFB0F273A4 
+                 30A834C1537F4296E54841EB90460C06DCCB92C65EF3444443462946A0A6FCB9 
+                 8E392739B15AE2B1ADFC13FF8EFC26E1D4FE84F1505A8E976B2D2A79FB4064EA 
+                 F33DBD5BE1A004B097481C42F5EA5A1CCD26C851FF14996789725F1DECAD5ADD 
+                                                                                  
+┌────────────────┐
+│ GTS Root R1 ✅ │
+└────────────────┘                                                                                  
+ Subject      :  CN=GTS Root R1,O=Google Trust Services LLC,C=US                  
+ Issuer       :  CN=GlobalSign Root CA,OU=Root CA,O=GlobalSign nv-sa,C=BE         
+ Valid        :  ✅                                                               
+   From       :  2020-06-19T00:00:42Z                                             
+   To         :  2028-01-28T00:00:42Z                                             
+ Features     :  ROOT, CA                                                         
+ Serial       :  77BD0D6CDB36F91AEA210FC4F058D30D                                 
+ Fingerprint  :  3EE0278DF71FA3C125C4CD487F01D774694E6FC57E0CD94C24EFD769133918E5 
+ Signature    :  34A41EB128A3D0B47617A6317A21E9D1523EC8DB74164188B83D351DEDE4FF93 
+                 E15C5FABBBEA7CCFDBE40DD18B57F2266F5BBE17466894376F6B7AC8C01837FA 
+                 2551ACEC68BFB2C849FD5A9ACA0123AC84802B028C9997EB496A8C75D7C7DEB2 
+                 C9979F5848570E35A1E41AD6FD6F83816FEF8CCF97AFC0852AF0F54E6909912D 
+                 E168B8C12B73E9D4D9FC22C0371F0B661D49ED02558F67E132D7D326BF70E33D 
+                 F4676D3D7CE53488E332FAA76E066A6FBD8B91EE164BE83BA9B337E7C344A47E 
+                 D86CD7C746F5929BE7D521BE66921994556CD429B20DC1665BE277494828ED9D 
+                 D71A337253B38235CF628BC9248BA5B7390CBB7E2A41BF52CFFCA296B6C2823F 
+                                                                                  

@@ -3,12 +3,8 @@ package main
 import (
 	"bytes"
 	"crypto/x509"
-	"encoding/pem"
-	"fmt"
-	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/pkg/errors"
 )
 
@@ -18,13 +14,18 @@ const PEMCertType = "CERTIFICATE"
 type Cert struct {
 	*x509.Certificate
 	isRoot    bool
+	valid     bool
 	verified  bool
 	verifyErr error
+	validity  Duration
+	expiresIn Duration
 }
 
 func FromX509(cert *x509.Certificate) (*Cert, error) {
 	return &Cert{
 		Certificate: cert,
+		validity:    validity(cert),
+		expiresIn:   expiresIn(cert),
 	}, nil
 }
 
@@ -36,49 +37,17 @@ func FromBytes(bytes []byte) (*Cert, error) {
 
 	return &Cert{
 		Certificate: cert,
+		validity:    validity(cert),
+		expiresIn:   expiresIn(cert),
 	}, nil
 }
 
-func (c Cert) String() string {
-	var b strings.Builder
+func validity(cert *x509.Certificate) Duration {
+	return Duration(cert.NotAfter.Sub(cert.NotBefore))
+}
 
-	fmt.Fprintf(&b, "serial number: %s\n", c.SerialNumber)
-	fmt.Fprintf(&b, "subject: %s\n", c.Subject)
-	fmt.Fprintf(&b, "issuer: %s\n", c.Issuer)
-	fmt.Fprintf(&b, "isCA: %v\n", c.IsCA)
-	fmt.Fprintf(&b, "root: %v\n", c.isRoot)
-
-	format := "2006-01-02 15:04:05"
-	fmt.Fprintln(&b, "valid:")
-	fmt.Fprintf(&b, "  from: %v\n", c.NotBefore.Local().Format(format))
-	fmt.Fprintf(&b, "  to  : %v\n", c.NotAfter.Local().Format(format))
-
-	if len(c.DNSNames) > 0 || len(c.EmailAddresses) > 0 || len(c.IPAddresses) > 0 || len(c.URIs) > 0 {
-		fmt.Fprintln(&b, "Subject Alternative Names:")
-	}
-
-	if len(c.DNSNames) > 0 {
-		fmt.Fprintf(&b, "  DNS: %v\n", c.DNSNames)
-	}
-
-	if len(c.EmailAddresses) > 0 {
-		fmt.Fprintf(&b, "  Emails: %v\n", c.EmailAddresses)
-	}
-
-	if len(c.IPAddresses) > 0 {
-		fmt.Fprintf(&b, "  IPs: %v\n", c.IPAddresses)
-	}
-
-	if len(c.URIs) > 0 {
-		fmt.Fprintf(&b, "  URIs: %v\n", c.URIs)
-	}
-
-	if c.verified {
-		fmt.Fprintf(&b, "verified: %s\n", color.GreenString("✔"))
-	} else {
-		fmt.Fprintf(&b, "verified: %s (%s)\n", color.RedString("✖"), c.verifyErr)
-	}
-	return b.String()
+func expiresIn(cert *x509.Certificate) Duration {
+	return Duration(cert.NotAfter.Sub(time.Now()))
 }
 
 // matchRoots checks if the given cert is in the roots pool
@@ -94,19 +63,6 @@ func matchRoots(cert *x509.Certificate, roots *x509.CertPool) bool {
 // Bundle is a list of certificates.
 type Bundle []*Cert
 
-func (cs Bundle) String() string {
-	var b strings.Builder
-	for i, c := range cs {
-		if i > 0 {
-			fmt.Fprintln(&b)
-		}
-		fmt.Fprintf(&b, "[%d] Certificate:\n", i)
-		fmt.Fprint(&b, c)
-	}
-
-	return b.String()
-}
-
 func (cs Bundle) Verify(asChain bool, t time.Time, roots *x509.CertPool) error {
 	var err error
 	if roots == nil {
@@ -117,6 +73,7 @@ func (cs Bundle) Verify(asChain bool, t time.Time, roots *x509.CertPool) error {
 	}
 
 	// Verify every cert in the chain by iterating from the tail.
+	// This allows verifying at least chain part.
 	for i := len(cs) - 1; i >= 0; i-- {
 		if asChain {
 			err = verifyChainPart(cs[i:], t, roots)
@@ -131,6 +88,7 @@ func (cs Bundle) Verify(asChain bool, t time.Time, roots *x509.CertPool) error {
 		}
 
 		cs[i].isRoot = matchRoots(cs[i].Certificate, roots)
+		cs[i].valid = isValid(cs[i].Certificate, t)
 	}
 	return nil
 }
@@ -161,21 +119,6 @@ func verifyCert(cert *Cert, t time.Time, roots *x509.CertPool) error {
 	return err
 }
 
-func (b Bundle) AsPEM() (string, error) {
-	var (
-		s   strings.Builder
-		err error
-	)
-
-	for _, cert := range b {
-		err = pem.Encode(&s, &pem.Block{
-			Type:  "CERTIFICATE",
-			Bytes: cert.Raw,
-		})
-		if err != nil {
-			return "", fmt.Errorf("cannot encode cert %v: %w", cert.Subject, err)
-		}
-	}
-
-	return s.String(), nil
+func isValid(cert *x509.Certificate, t time.Time) bool {
+	return t.After(cert.NotBefore) && t.Before(cert.NotAfter)
 }

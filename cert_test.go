@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -61,7 +62,14 @@ func TestCertString(t *testing.T) {
 		}
 		certs.Verify(false, tt.t, roots)
 
-		got := certs.String()
+		p := NewTextBundlePrinter(
+			WithTime(tt.t),
+		)
+
+		got, err := p.Print(certs)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		if *update {
 			os.WriteFile(golden, []byte(got), 0644)
@@ -110,7 +118,14 @@ func TestChainString(t *testing.T) {
 		// enforce color output
 		color.NoColor = false
 
-		got := certs.String()
+		p := NewTextBundlePrinter(
+			WithTime(tt.t),
+		)
+
+		got, err := p.Print(certs)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		if *update {
 			os.WriteFile(golden, []byte(got), 0644)
@@ -128,6 +143,71 @@ func TestChainString(t *testing.T) {
 	}
 }
 
+func TestVerbosityFormat(t *testing.T) {
+	testCases := []struct {
+		filename string
+		t        time.Time
+	}{
+		{"google.crt", time.Date(2025, 8, 3, 18, 57, 0, 0, time.UTC)},
+	}
+
+	// Set timezone to fixate serialization of datetime
+	loc, err := time.LoadLocation("UTC")
+	if err != nil {
+		t.Fatal(err)
+	}
+	time.Local = loc
+
+	roots := loadRoots(t)
+
+	for _, l := range []Level{LevelBase, LevelVerbose, LevelFull} {
+		for _, tt := range testCases {
+			suffix := ""
+			if l == LevelVerbose {
+				suffix = ".verbose"
+			}
+			if l == LevelFull {
+				suffix = ".full"
+			}
+
+			filename := filepath.Join("testdata", tt.filename)
+			golden := filepath.Join("testdata", fmt.Sprintf("%s%s.golden", tt.filename, suffix))
+
+			certs, err := load(filename)
+			if err != nil {
+				t.Fatal(err)
+			}
+			certs.Verify(true, tt.t, roots)
+
+			// enforce color output
+			color.NoColor = false
+
+			p := NewTextBundlePrinter(
+				WithTime(tt.t),
+				WithLevel(l),
+			)
+
+			got, err := p.Print(certs)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if *update {
+				os.WriteFile(golden, []byte(got), 0644)
+			}
+
+			wantBytes, err := os.ReadFile(golden)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := string(wantBytes)
+
+			if got != want {
+				t.Errorf("%s serialization doesn't match golden file %s:\n%v", filename, golden, diff.LineDiff(want, got))
+			}
+		}
+	}
+}
 func loadRoots(t *testing.T) *x509.CertPool {
 	roots := x509.NewCertPool()
 

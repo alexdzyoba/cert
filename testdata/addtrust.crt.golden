@@ -1,10 +1,8 @@
-[0] Certificate:
-serial number: 1
-subject: CN=AddTrust External CA Root,OU=AddTrust External TTP Network,O=AddTrust AB,C=SE
-issuer: CN=AddTrust External CA Root,OU=AddTrust External TTP Network,O=AddTrust AB,C=SE
-isCA: true
-root: true
-valid:
-  from: 2000-05-30 10:48:38
-  to  : 2020-05-30 10:48:38
-verified: ✔
+┌──────────────────────────────┐
+│ AddTrust External CA Root ✅ │
+└──────────────────────────────┘                                                                                        
+ Subject   :  AddTrust External CA Root, AddTrust External TTP Network, AddTrust AB, SE 
+ Issuer    :  AddTrust External CA Root, AddTrust External TTP Network, AddTrust AB, SE 
+ Valid     :  20.0 years, expired on 2020-05-30 ✅                                      
+ Features  :  ROOT, CA                                                                  
+                                                                                        

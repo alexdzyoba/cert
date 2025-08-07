@@ -1,34 +1,32 @@
-[0] Certificate:
-serial number: 104690999963482091989177059696995060279
-subject: CN=*.google.com
-issuer: CN=WR2,O=Google Trust Services,C=US
-isCA: false
-root: false
-valid:
-  from: 2025-07-07 08:34:03
-  to  : 2025-09-29 08:34:02
-Subject Alternative Names:
-  DNS: [*.google.com *.appengine.google.com *.bdn.dev *.origin-test.bdn.dev *.cloud.google.com *.crowdsource.google.com *.datacompute.google.com *.google.ca *.google.cl *.google.co.in *.google.co.jp *.google.co.uk *.google.com.ar *.google.com.au *.google.com.br *.google.com.co *.google.com.mx *.google.com.tr *.google.com.vn *.google.de *.google.es *.google.fr *.google.hu *.google.it *.google.nl *.google.pl *.google.pt *.googleapis.cn *.googlevideo.com *.gstatic.cn *.gstatic-cn.com googlecnapps.cn *.googlecnapps.cn googleapps-cn.com *.googleapps-cn.com gkecnapps.cn *.gkecnapps.cn googledownloads.cn *.googledownloads.cn recaptcha.net.cn *.recaptcha.net.cn recaptcha-cn.net *.recaptcha-cn.net widevine.cn *.widevine.cn ampproject.org.cn *.ampproject.org.cn ampproject.net.cn *.ampproject.net.cn google-analytics-cn.com *.google-analytics-cn.com googleadservices-cn.com *.googleadservices-cn.com googlevads-cn.com *.googlevads-cn.com googleapis-cn.com *.googleapis-cn.com googleoptimize-cn.com *.googleoptimize-cn.com doubleclick-cn.net *.doubleclick-cn.net *.fls.doubleclick-cn.net *.g.doubleclick-cn.net doubleclick.cn *.doubleclick.cn *.fls.doubleclick.cn *.g.doubleclick.cn dartsearch-cn.net *.dartsearch-cn.net googletraveladservices-cn.com *.googletraveladservices-cn.com googletagservices-cn.com *.googletagservices-cn.com googletagmanager-cn.com *.googletagmanager-cn.com googlesyndication-cn.com *.googlesyndication-cn.com *.safeframe.googlesyndication-cn.com app-measurement-cn.com *.app-measurement-cn.com gvt1-cn.com *.gvt1-cn.com gvt2-cn.com *.gvt2-cn.com 2mdn-cn.net *.2mdn-cn.net googleflights-cn.net *.googleflights-cn.net admob-cn.com *.admob-cn.com googlesandbox-cn.com *.googlesandbox-cn.com *.safenup.googlesandbox-cn.com *.gstatic.com *.metric.gstatic.com *.gvt1.com *.gcpcdn.gvt1.com *.gvt2.com *.gcp.gvt2.com *.url.google.com *.youtube-nocookie.com *.ytimg.com ai.android android.com *.android.com *.flash.android.com g.cn *.g.cn g.co *.g.co goo.gl www.goo.gl google-analytics.com *.google-analytics.com google.com googlecommerce.com *.googlecommerce.com ggpht.cn *.ggpht.cn urchin.com *.urchin.com youtu.be youtube.com *.youtube.com music.youtube.com *.music.youtube.com youtubeeducation.com *.youtubeeducation.com youtubekids.com *.youtubekids.com yt.be *.yt.be android.clients.google.com *.android.google.cn *.chrome.google.cn *.developers.google.cn *.aistudio.google.com]
-verified: [32m✔[0m
+┌─────────────────┐
+│ *.google.com ✅ │
+└─────────────────┘                                                   
+ Subject   :  *.google.com (+137 DNS SANs)         
+ Issuer    :  WR2, Google Trust Services, US       
+ Valid     :  2.8 months, expired on 2025-09-29 ✅ 
+ Features  :  DNS SANs                             
+                                                   
+ DNS SANs:                
+ - *.google.com           
+ - *.appengine.google.com 
+ - *.bdn.dev              
+ - *.origin-test.bdn.dev  
+ - *.cloud.google.com     
+ - (... 132 more)         
 
-[1] Certificate:
-serial number: 170058220837755766831192027518741805976
-subject: CN=WR2,O=Google Trust Services,C=US
-issuer: CN=GTS Root R1,O=Google Trust Services LLC,C=US
-isCA: true
-root: false
-valid:
-  from: 2023-12-13 09:00:00
-  to  : 2029-02-20 14:00:00
-verified: [32m✔[0m
-
-[2] Certificate:
-serial number: 159159747900478145820483398898491642637
-subject: CN=GTS Root R1,O=Google Trust Services LLC,C=US
-issuer: CN=GlobalSign Root CA,OU=Root CA,O=GlobalSign nv-sa,C=BE
-isCA: true
-root: true
-valid:
-  from: 2020-06-19 00:00:42
-  to  : 2028-01-28 00:00:42
-verified: [32m✔[0m
+┌────────┐
+│ WR2 ✅ │
+└────────┘                                                              
+ Subject   :  WR2, Google Trust Services, US                  
+ Issuer    :  GTS Root R1, Google Trust Services LLC, US      
+ Valid     :  5.2 years, expires in 3.4 years (2029-02-20) ✅ 
+ Features  :  CA                                              
+                                                              
+┌────────────────┐
+│ GTS Root R1 ✅ │
+└────────────────┘                                                                
+ Subject   :  GTS Root R1, Google Trust Services LLC, US        
+ Issuer    :  GlobalSign Root CA, Root CA, GlobalSign nv-sa, BE 
+ Valid     :  7.6 years, expires in 2.3 years (2028-01-28) ✅   
+ Features  :  ROOT, CA                                          
+                                                                
