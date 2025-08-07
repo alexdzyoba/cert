@@ -23,6 +23,7 @@ func main() {
 		timeString string
 		noChain    bool
 		verbose    bool
+		full       bool
 		pemOutput  bool
 		rootsPath  string
 	)
@@ -36,6 +37,7 @@ func main() {
 	pflag.StringVarP(&timeString, "time", "t", "", "Override date and time for validation (RFC3339 format)")
 	pflag.BoolVarP(&noChain, "nochain", "n", false, "disable chain validation")
 	pflag.BoolVarP(&verbose, "verbose", "v", false, "verbose output")
+	pflag.BoolVarP(&full, "full", "f", false, "full output")
 	pflag.StringVarP(&rootsPath, "roots", "r", "", "path to root certificates bundle in PEM format")
 	pflag.BoolVarP(&pemOutput, "pem", "p", false, "output in PEM format instead of text")
 	pflag.Parse()
@@ -54,6 +56,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		log.Printf("Current time is set to %v\n", t)
 	}
 
 	resource := pflag.Args()[0]
@@ -73,8 +76,9 @@ func main() {
 		roots = x509.NewCertPool()
 		ok := roots.AppendCertsFromPEM(data)
 		if !ok {
-			log.Fatalf("no root certificate was parsed from %q", rootsPath)
+			log.Fatalf("no root certificates was parsed from %q", rootsPath)
 		}
+		log.Printf("Using root certificates from %q\n", rootsPath)
 	}
 
 	asChain := len(bundle) > 1 && !noChain
@@ -83,15 +87,32 @@ func main() {
 		log.Fatalf("failed to verify: %v", err)
 	}
 
-	if pemOutput {
-		pem, err := bundle.AsPEM()
-		if err != nil {
-			log.Fatalf("cannot serialize to PEM: %v", err)
+	var printer BundlePrinter
+
+	switch {
+	case pemOutput:
+		printer = PEMBundlePrinter{}
+
+	default:
+		level := Level(BaseLevel)
+		if verbose {
+			level = VerboseLevel
 		}
-		fmt.Print(pem)
-	} else {
-		fmt.Print(bundle)
+		if full {
+			level = FullLevel
+		}
+
+		printer = NewTextBundlePrinter(
+			WithLevel(level),
+			WithTime(t),
+		)
 	}
+
+	s, err := printer.Print(bundle)
+	if err != nil {
+		log.Fatalf("cannot serialize to PEM: %v", err)
+	}
+	fmt.Print(s)
 }
 
 // load determines the type of resource and loads certificates bundle from it
