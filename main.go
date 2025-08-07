@@ -6,7 +6,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/url"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 )
@@ -23,6 +23,7 @@ func main() {
 		timeString string
 		noChain    bool
 		verbose    bool
+		full       bool
 		pemOutput  bool
 		rootsPath  string
 	)
@@ -36,6 +37,7 @@ func main() {
 	pflag.StringVarP(&timeString, "time", "t", "", "Override date and time for validation (RFC3339 format)")
 	pflag.BoolVarP(&noChain, "nochain", "n", false, "disable chain validation")
 	pflag.BoolVarP(&verbose, "verbose", "v", false, "verbose output")
+	pflag.BoolVarP(&full, "full", "f", false, "full output")
 	pflag.StringVarP(&rootsPath, "roots", "r", "", "path to root certificates bundle in PEM format")
 	pflag.BoolVarP(&pemOutput, "pem", "p", false, "output in PEM format instead of text")
 	pflag.Parse()
@@ -44,6 +46,8 @@ func main() {
 		pflag.Usage()
 		os.Exit(1)
 	}
+
+	log.SetReportTimestamp(false)
 
 	var err error
 
@@ -54,6 +58,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		log.Warnf("Current time is set to %v", t)
 	}
 
 	resource := pflag.Args()[0]
@@ -73,8 +78,9 @@ func main() {
 		roots = x509.NewCertPool()
 		ok := roots.AppendCertsFromPEM(data)
 		if !ok {
-			log.Fatalf("no root certificate was parsed from %q", rootsPath)
+			log.Fatalf("no root certificates was parsed from %q", rootsPath)
 		}
+		log.Warnf("Using root certificates from %q", rootsPath)
 	}
 
 	asChain := len(bundle) > 1 && !noChain
@@ -83,15 +89,32 @@ func main() {
 		log.Fatalf("failed to verify: %v", err)
 	}
 
-	if pemOutput {
-		pem, err := bundle.AsPEM()
-		if err != nil {
-			log.Fatalf("cannot serialize to PEM: %v", err)
+	var printer BundlePrinter
+
+	switch {
+	case pemOutput:
+		printer = PEMBundlePrinter{}
+
+	default:
+		level := Level(LevelBase)
+		if verbose {
+			level = LevelVerbose
 		}
-		fmt.Print(pem)
-	} else {
-		fmt.Print(bundle)
+		if full {
+			level = LevelFull
+		}
+
+		printer = NewTextBundlePrinter(
+			WithLevel(level),
+			WithTime(t),
+		)
 	}
+
+	s, err := printer.Print(bundle)
+	if err != nil {
+		log.Fatalf("cannot serialize to PEM: %v", err)
+	}
+	fmt.Print(s)
 }
 
 // load determines the type of resource and loads certificates bundle from it

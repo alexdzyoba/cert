@@ -61,7 +61,14 @@ func TestCertString(t *testing.T) {
 		}
 		certs.Verify(false, tt.t, roots)
 
-		got := certs.String()
+		p := NewTextBundlePrinter(
+			WithTime(tt.t),
+		)
+
+		got, err := p.Print(certs)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		if *update {
 			os.WriteFile(golden, []byte(got), 0644)
@@ -110,7 +117,14 @@ func TestChainString(t *testing.T) {
 		// enforce color output
 		color.NoColor = false
 
-		got := certs.String()
+		p := NewTextBundlePrinter(
+			WithTime(tt.t),
+		)
+
+		got, err := p.Print(certs)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		if *update {
 			os.WriteFile(golden, []byte(got), 0644)
