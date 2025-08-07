@@ -68,11 +68,9 @@ func (p TextBundlePrinter) printCert(cert *Cert) string {
 			return cell
 		})
 
-	additional := buildAdditionalInfo(cert)
-
-	t.Row("Subject", fmt.Sprintf(": %s%s", cert.Subject.CommonName, additional))
-	t.Row("Issuer", fmt.Sprintf(": %s", cert.Issuer.CommonName))
-	t.Row("Valid", fmt.Sprintf(": %v, expires in %v (%v)", cert.validity, cert.expiresIn, cert.NotAfter.Format("2006-02-01")))
+	t.Row("Subject", ": "+formatSubject(cert))
+	t.Row("Issuer", ": "+cert.Issuer.CommonName)
+	t.Row("Valid", ": "+formatValidity(cert))
 	t.Row("Features", ": "+buildFeatures(cert))
 	if len(cert.DNSNames) > 0 {
 		t.Row("DNS SANs:", ": "+strings.Join(cert.DNSNames, "\n"))
@@ -80,6 +78,13 @@ func (p TextBundlePrinter) printCert(cert *Cert) string {
 
 	b.WriteString(t.Render())
 	return b.String()
+}
+
+func formatValidity(cert *Cert) string {
+	if cert.expiresIn < 0 {
+		return fmt.Sprintf("%v, expired on %v", cert.validity, cert.NotAfter.Format("2006-02-01"))
+	}
+	return fmt.Sprintf("%v, expires in %v (%v)", cert.validity, cert.expiresIn, cert.NotAfter.Format("2006-02-01"))
 }
 
 func buildFeatures(cert *Cert) string {
@@ -106,24 +111,26 @@ func buildFeatures(cert *Cert) string {
 	return strings.Join(features, ", ")
 }
 
-func buildAdditionalInfo(cert *Cert) string {
-	info := []string{}
+func formatSubject(cert *Cert) string {
+	subject := cert.Subject.CommonName
+
+	sans := []string{}
 	if len(cert.DNSNames) > 0 {
-		info = append(info, fmt.Sprintf("+%d DNS SANs", len(cert.DNSNames)))
+		sans = append(sans, fmt.Sprintf("+%d DNS SANs", len(cert.DNSNames)))
 	}
 	if len(cert.EmailAddresses) > 0 {
-		info = append(info, fmt.Sprintf("+%d Email SANs", len(cert.EmailAddresses)))
+		sans = append(sans, fmt.Sprintf("+%d Email SANs", len(cert.EmailAddresses)))
 	}
 	if len(cert.IPAddresses) > 0 {
-		info = append(info, fmt.Sprintf("+%d IP SANs", len(cert.IPAddresses)))
+		sans = append(sans, fmt.Sprintf("+%d IP SANs", len(cert.IPAddresses)))
 	}
 	if len(cert.URIs) > 0 {
-		info = append(info, fmt.Sprintf("+%d URI SANs", len(cert.URIs)))
+		sans = append(sans, fmt.Sprintf("+%d URI SANs", len(cert.URIs)))
 	}
 
-	if len(info) == 0 {
-		return ""
+	if len(sans) == 0 {
+		return subject
 	}
 
-	return fmt.Sprintf("(%v)", strings.Join(info, " "))
+	return fmt.Sprintf("%s (%v)", subject, strings.Join(sans, " "))
 }
