@@ -16,11 +16,15 @@ type Cert struct {
 	isRoot    bool
 	verified  bool
 	verifyErr error
+	validity  time.Duration
+	expiresIn time.Duration
 }
 
 func FromX509(cert *x509.Certificate) (*Cert, error) {
 	return &Cert{
 		Certificate: cert,
+		validity:    validity(cert),
+		expiresIn:   expiresIn(cert),
 	}, nil
 }
 
@@ -32,7 +36,17 @@ func FromBytes(bytes []byte) (*Cert, error) {
 
 	return &Cert{
 		Certificate: cert,
+		validity:    validity(cert),
+		expiresIn:   expiresIn(cert),
 	}, nil
+}
+
+func validity(cert *x509.Certificate) time.Duration {
+	return cert.NotAfter.Sub(cert.NotBefore)
+}
+
+func expiresIn(cert *x509.Certificate) time.Duration {
+	return cert.NotAfter.Sub(time.Now())
 }
 
 // matchRoots checks if the given cert is in the roots pool

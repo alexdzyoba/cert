@@ -6,7 +6,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/url"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 )
@@ -47,6 +47,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	log.SetReportTimestamp(false)
+
 	var err error
 
 	// Override time from flag
@@ -56,7 +58,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Printf("Current time is set to %v\n", t)
+		log.Warnf("Current time is set to %v", t)
 	}
 
 	resource := pflag.Args()[0]
@@ -78,7 +80,7 @@ func main() {
 		if !ok {
 			log.Fatalf("no root certificates was parsed from %q", rootsPath)
 		}
-		log.Printf("Using root certificates from %q\n", rootsPath)
+		log.Warnf("Using root certificates from %q", rootsPath)
 	}
 
 	asChain := len(bundle) > 1 && !noChain

@@ -5,7 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
 )
 
 type TextBundlePrinter struct {
@@ -19,6 +20,11 @@ const (
 	BaseLevel = iota
 	VerboseLevel
 	FullLevel
+)
+
+var (
+	cell = lipgloss.NewStyle().Padding(0, 1)
+	box  = cell.Border(lipgloss.NormalBorder())
 )
 
 type Opt func(*TextBundlePrinter)
@@ -45,56 +51,79 @@ func NewTextBundlePrinter(opts ...Opt) *TextBundlePrinter {
 
 func (p TextBundlePrinter) Print(bundle Bundle) (string, error) {
 	var b strings.Builder
-	for i, c := range bundle {
-		if i > 0 {
-			fmt.Fprintln(&b)
-		}
-		fmt.Fprintf(&b, "[%d] Certificate:\n", i)
-		fmt.Fprint(&b, p.printCert(c))
+	for _, c := range bundle {
+		fmt.Fprintln(&b, p.printCert(c))
 	}
-
 	return b.String(), nil
 }
 
 func (p TextBundlePrinter) printCert(cert *Cert) string {
 	var b strings.Builder
 
-	fmt.Fprintf(&b, "serial number: %s\n", cert.SerialNumber)
-	fmt.Fprintf(&b, "subject: %s\n", cert.Subject)
-	fmt.Fprintf(&b, "issuer: %s\n", cert.Issuer)
-	fmt.Fprintf(&b, "isCA: %v\n", cert.IsCA)
-	fmt.Fprintf(&b, "root: %v\n", cert.isRoot)
+	b.WriteString(box.Render(cert.Subject.CommonName))
 
-	format := "2006-01-02 15:04:05"
-	fmt.Fprintln(&b, "valid:")
-	fmt.Fprintf(&b, "  from: %v\n", cert.NotBefore.Local().Format(format))
-	fmt.Fprintf(&b, "  to  : %v\n", cert.NotAfter.Local().Format(format))
+	t := table.New().
+		Border(lipgloss.Border{}).
+		StyleFunc(func(_, _ int) lipgloss.Style {
+			return cell
+		})
 
-	if len(cert.DNSNames) > 0 || len(cert.EmailAddresses) > 0 || len(cert.IPAddresses) > 0 || len(cert.URIs) > 0 {
-		fmt.Fprintln(&b, "Subject Alternative Names:")
-	}
+	additional := buildAdditionalInfo(cert)
 
+	t.Row("Subject", fmt.Sprintf(": %s%s", cert.Subject.CommonName, additional))
+	t.Row("Issuer", fmt.Sprintf(": %s", cert.Issuer.CommonName))
+	t.Row("Valid", fmt.Sprintf(": %v, expires in %v (%v)", cert.validity, cert.expiresIn, cert.NotAfter.Format("2006-02-01")))
+	t.Row("Features", ": "+buildFeatures(cert))
 	if len(cert.DNSNames) > 0 {
-		fmt.Fprintf(&b, "  DNS: %v\n", cert.DNSNames)
+		t.Row("DNS SANs:", ": "+strings.Join(cert.DNSNames, "\n"))
 	}
 
-	if len(cert.EmailAddresses) > 0 {
-		fmt.Fprintf(&b, "  Emails: %v\n", cert.EmailAddresses)
-	}
-
-	if len(cert.IPAddresses) > 0 {
-		fmt.Fprintf(&b, "  IPs: %v\n", cert.IPAddresses)
-	}
-
-	if len(cert.URIs) > 0 {
-		fmt.Fprintf(&b, "  URIs: %v\n", cert.URIs)
-	}
-
-	if cert.verified {
-		fmt.Fprintf(&b, "verified: %s\n", color.GreenString("✔"))
-	} else {
-		fmt.Fprintf(&b, "verified: %s (%s)\n", color.RedString("✖"), cert.verifyErr)
-	}
+	b.WriteString(t.Render())
 	return b.String()
+}
 
+func buildFeatures(cert *Cert) string {
+	features := []string{}
+	if cert.isRoot {
+		features = append(features, "ROOT")
+	}
+	if cert.IsCA {
+		features = append(features, "CA")
+	}
+	if len(cert.DNSNames) > 0 {
+		features = append(features, "DNS SANs")
+	}
+	if len(cert.EmailAddresses) > 0 {
+		features = append(features, "Email SANs")
+	}
+	if len(cert.IPAddresses) > 0 {
+		features = append(features, "IP SANs")
+	}
+	if len(cert.URIs) > 0 {
+		features = append(features, "URI SANs")
+	}
+
+	return strings.Join(features, ", ")
+}
+
+func buildAdditionalInfo(cert *Cert) string {
+	info := []string{}
+	if len(cert.DNSNames) > 0 {
+		info = append(info, fmt.Sprintf("+%d DNS SANs", len(cert.DNSNames)))
+	}
+	if len(cert.EmailAddresses) > 0 {
+		info = append(info, fmt.Sprintf("+%d Email SANs", len(cert.EmailAddresses)))
+	}
+	if len(cert.IPAddresses) > 0 {
+		info = append(info, fmt.Sprintf("+%d IP SANs", len(cert.IPAddresses)))
+	}
+	if len(cert.URIs) > 0 {
+		info = append(info, fmt.Sprintf("+%d URI SANs", len(cert.URIs)))
+	}
+
+	if len(info) == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf("(%v)", strings.Join(info, " "))
 }
