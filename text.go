@@ -20,16 +20,19 @@ type TextBundlePrinter struct {
 type Level int
 
 const (
-	BaseLevel = iota
-	VerboseLevel
-	FullLevel
+	LevelBase = iota
+	LevelVerbose
+	LevelFull
 )
 
 const DefaultListLimit = 5
 
 var (
-	cell = lipgloss.NewStyle().Padding(0, 1)
-	box  = cell.Border(lipgloss.NormalBorder())
+	cell        = lipgloss.NewStyle().Padding(0, 1)
+	box         = cell.Border(lipgloss.NormalBorder())
+	wrappedCell = lipgloss.NewStyle().Width(64)
+	red         = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1"))
+	green       = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2"))
 )
 
 type Opt func(*TextBundlePrinter)
@@ -65,21 +68,45 @@ func (p TextBundlePrinter) Print(bundle Bundle) (string, error) {
 func (p TextBundlePrinter) printCert(cert *Cert) string {
 	var b strings.Builder
 
-	b.WriteString(box.Render(cert.Subject.CommonName))
-
+	b.WriteString(
+		box.Render(
+			cert.Subject.CommonName +
+				" " +
+				printBool(cert.verified)),
+	)
 	t := table.New().
 		Border(lipgloss.Border{}).
 		StyleFunc(func(_, _ int) lipgloss.Style {
 			return cell
 		})
 
-	t.Row("Subject", ": "+p.formatSubject(cert))
-	t.Row("Issuer", ": "+p.formatName(cert.Issuer))
-	t.Row("Valid", ": "+p.formatValidity(cert))
-	t.Row("Features", ": "+p.buildFeatures(cert))
+	if !cert.verified {
+		t.Row("Verification error", ":", red.Render(cert.verifyErr.Error()))
+	}
+	t.Row("Subject", ":", p.formatSubject(cert))
+	t.Row("Issuer", ":", p.formatName(cert.Issuer))
+	if p.level >= LevelVerbose {
+		t.Row("Valid", ":", printBool(cert.valid))
+		t.Row("  From", ":", cert.NotBefore.Format(time.RFC3339))
+		t.Row("  To", ":", cert.NotAfter.Format(time.RFC3339))
+	} else {
+		t.Row("Valid", ":", p.formatValidity(cert))
+	}
+	t.Row("Features", ":", p.buildFeatures(cert))
+	if p.level >= LevelVerbose {
+		// Render serial as bytes for compatibility with openssl
+		t.Row("Serial", ":", fmt.Sprintf("%X", cert.SerialNumber.Bytes()))
+	}
+
+	if p.level >= LevelFull {
+		t.Row("Signature", ":", wrappedCell.Render(fmt.Sprintf("%X", cert.Signature)))
+	}
+
 	b.WriteString(t.Render())
 	if len(cert.DNSNames) > 0 {
-		b.WriteString(cell.Render("\nDNS SANs:\n" + p.formatList(cert.DNSNames)))
+		b.WriteString("\n")
+		b.WriteString(cell.Render("DNS SANs:\n" + p.formatList(cert.DNSNames)))
+		b.WriteString("\n")
 	}
 
 	return b.String()
@@ -87,9 +114,9 @@ func (p TextBundlePrinter) printCert(cert *Cert) string {
 
 func (p TextBundlePrinter) formatValidity(cert *Cert) string {
 	if cert.expiresIn < 0 {
-		return fmt.Sprintf("%v, expired on %v", cert.validity, cert.NotAfter.Format("2006-02-01"))
+		return fmt.Sprintf("%v, expired on %v %s", cert.validity, cert.NotAfter.Format("2006-02-01"), printBool(cert.valid))
 	}
-	return fmt.Sprintf("%v, expires in %v (%v)", cert.validity, cert.expiresIn, cert.NotAfter.Format("2006-02-01"))
+	return fmt.Sprintf("%v, expires in %v (%v) %s", cert.validity, cert.expiresIn, cert.NotAfter.Format("2006-02-01"), printBool(cert.valid))
 }
 
 func (p TextBundlePrinter) buildFeatures(cert *Cert) string {
@@ -117,7 +144,7 @@ func (p TextBundlePrinter) buildFeatures(cert *Cert) string {
 }
 
 func (p TextBundlePrinter) formatSubject(cert *Cert) string {
-	if p.level > BaseLevel {
+	if p.level >= LevelVerbose {
 		return cert.Subject.String()
 	}
 
@@ -145,7 +172,7 @@ func (p TextBundlePrinter) formatSubject(cert *Cert) string {
 }
 
 func (p TextBundlePrinter) formatName(name pkix.Name) string {
-	if p.level > BaseLevel {
+	if p.level >= LevelVerbose {
 		return name.String()
 	}
 
@@ -166,7 +193,7 @@ func (p TextBundlePrinter) formatName(name pkix.Name) string {
 func (p TextBundlePrinter) formatList(ss []string) string {
 	items := ss
 	limit := int(math.MaxInt32)
-	if p.level < VerboseLevel {
+	if p.level < LevelVerbose {
 		limit = DefaultListLimit
 	}
 
@@ -181,4 +208,11 @@ func (p TextBundlePrinter) formatList(ss []string) string {
 	}
 
 	return l.String()
+}
+
+func printBool(b bool) string {
+	if b {
+		return green.Render("✅")
+	}
+	return red.Render("❌")
 }

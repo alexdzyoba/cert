@@ -96,12 +96,12 @@ func main() {
 		printer = PEMBundlePrinter{}
 
 	default:
-		level := Level(BaseLevel)
+		level := Level(LevelBase)
 		if verbose {
-			level = VerboseLevel
+			level = LevelVerbose
 		}
 		if full {
-			level = FullLevel
+			level = LevelFull
 		}
 
 		printer = NewTextBundlePrinter(

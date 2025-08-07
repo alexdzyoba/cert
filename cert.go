@@ -14,6 +14,7 @@ const PEMCertType = "CERTIFICATE"
 type Cert struct {
 	*x509.Certificate
 	isRoot    bool
+	valid     bool
 	verified  bool
 	verifyErr error
 	validity  Duration
@@ -87,6 +88,7 @@ func (cs Bundle) Verify(asChain bool, t time.Time, roots *x509.CertPool) error {
 		}
 
 		cs[i].isRoot = matchRoots(cs[i].Certificate, roots)
+		cs[i].valid = isValid(cs[i].Certificate, t)
 	}
 	return nil
 }
@@ -115,4 +117,8 @@ func verifyCert(cert *Cert, t time.Time, roots *x509.CertPool) error {
 		Roots:       roots,
 	})
 	return err
+}
+
+func isValid(cert *x509.Certificate, t time.Time) bool {
+	return t.After(cert.NotBefore) && t.Before(cert.NotAfter)
 }
