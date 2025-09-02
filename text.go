@@ -116,9 +116,9 @@ func (p TextBundlePrinter) printCert(cert *Cert) string {
 
 func (p TextBundlePrinter) formatValidity(cert *Cert) string {
 	if cert.expiresIn < 0 {
-		return fmt.Sprintf("%v, expired on %v %s", cert.validity, cert.NotAfter.Format("2006-02-01"), printBool(cert.valid))
+		return fmt.Sprintf("%v, expired on %v %s", cert.validity, cert.NotAfter.Format("2006-01-02"), printBool(cert.valid))
 	}
-	return fmt.Sprintf("%v, expires in %v (%v) %s", cert.validity, cert.expiresIn, cert.NotAfter.Format("2006-02-01"), printBool(cert.valid))
+	return fmt.Sprintf("%v, expires in %v (%v) %s", cert.validity, cert.expiresIn, cert.NotAfter.Format("2006-01-02"), printBool(cert.valid))
 }
 
 func (p TextBundlePrinter) buildFeatures(cert *Cert) string {
