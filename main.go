@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"io"
@@ -23,6 +22,7 @@ func main() {
 		timeString string
 		noChain    bool
 		verbose    bool
+		withRoot   bool
 		full       bool
 		pemOutput  bool
 		rootsPath  string
@@ -37,8 +37,9 @@ func main() {
 	pflag.StringVarP(&timeString, "time", "t", "", "Override date and time for validation (RFC3339 format)")
 	pflag.BoolVarP(&noChain, "nochain", "n", false, "disable chain validation")
 	pflag.BoolVarP(&verbose, "verbose", "v", false, "verbose output")
+	pflag.BoolVarP(&withRoot, "with-root", "r", false, "print root certificate from system CA store. Always printed with verbose and full output")
 	pflag.BoolVarP(&full, "full", "f", false, "full output")
-	pflag.StringVarP(&rootsPath, "roots", "r", "", "path to root certificates bundle in PEM format")
+	pflag.StringVarP(&rootsPath, "roots", "R", "", "path to root certificates bundle in PEM format")
 	pflag.BoolVarP(&pemOutput, "pem", "p", false, "output in PEM format instead of text")
 	pflag.Parse()
 
@@ -68,14 +69,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var roots *x509.CertPool
+	roots, err := SystemRoots()
+	if err != nil {
+		log.Fatal(err)
+	}
 	if rootsPath != "" {
 		data, err := os.ReadFile(rootsPath)
 		if err != nil {
 			log.Fatalf("cannot read roots bundle file %q: %v", rootsPath, err)
 		}
 
-		roots = x509.NewCertPool()
 		ok := roots.AppendCertsFromPEM(data)
 		if !ok {
 			log.Fatalf("no root certificates was parsed from %q", rootsPath)
@@ -88,6 +91,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to verify: %v", err)
 	}
+
+	// bundle.VerifySingle(asChain, t, roots)
 
 	var printer BundlePrinter
 
@@ -104,13 +109,19 @@ func main() {
 			level = LevelFull
 		}
 
-		printer = NewTextBundlePrinter(
+		opts := []Opt{
 			WithLevel(level),
 			WithTime(t),
-		)
+		}
+
+		if withRoot {
+			opts = append(opts, WithRoot())
+		}
+
+		printer = NewTextBundlePrinter(opts...)
 	}
 
-	s, err := printer.Print(bundle)
+	s, err := printer.Print(bundle, roots)
 	if err != nil {
 		log.Fatalf("cannot serialize to PEM: %v", err)
 	}

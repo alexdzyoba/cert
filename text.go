@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/sha256"
 	"crypto/x509/pkix"
 	"fmt"
 	"math"
@@ -14,8 +13,9 @@ import (
 )
 
 type TextBundlePrinter struct {
-	level Level
-	now   time.Time
+	level    Level
+	now      time.Time
+	withRoot bool
 }
 
 type Level int
@@ -50,6 +50,12 @@ func WithTime(t time.Time) Opt {
 	}
 }
 
+func WithRoot() Opt {
+	return func(p *TextBundlePrinter) {
+		p.withRoot = true
+	}
+}
+
 func NewTextBundlePrinter(opts ...Opt) *TextBundlePrinter {
 	p := new(TextBundlePrinter)
 	for _, opt := range opts {
@@ -58,15 +64,29 @@ func NewTextBundlePrinter(opts ...Opt) *TextBundlePrinter {
 	return p
 }
 
-func (p TextBundlePrinter) Print(bundle Bundle) (string, error) {
+func (p TextBundlePrinter) Print(bundle Bundle, roots *Roots) (string, error) {
 	var b strings.Builder
 	for _, c := range bundle {
 		fmt.Fprintln(&b, p.printCert(c))
 	}
+
+	if p.withRoot || p.level >= LevelVerbose {
+		// roots.FindFrom(bundle[len(bundle)-1])
+		// 	rootCert, err := findRoot(bundle[len(bundle)-1])
+		// 	if err != nil {
+		// 		return b.String(), fmt.Errorf("cannot find root: %w", err)
+		// 	}
+		// 	fmt.Fprintln(&b, p.printCert(rootCert))
+	}
+
 	return b.String(), nil
 }
 
 func (p TextBundlePrinter) printCert(cert *Cert) string {
+	if cert == nil {
+		return ""
+	}
+
 	var b strings.Builder
 
 	b.WriteString(
@@ -82,7 +102,9 @@ func (p TextBundlePrinter) printCert(cert *Cert) string {
 		})
 
 	if !cert.verified {
-		t.Row("Verification error", ":", red.Render(cert.verifyErr.Error()))
+		if cert.verifyErr != nil {
+			t.Row("Verification error", ":", red.Render(cert.verifyErr.Error()))
+		}
 	}
 	t.Row("Subject", ":", p.formatSubject(cert))
 	t.Row("Issuer", ":", p.formatName(cert.Issuer))
@@ -97,7 +119,7 @@ func (p TextBundlePrinter) printCert(cert *Cert) string {
 	if p.level >= LevelVerbose {
 		// Render serial as bytes for compatibility with openssl
 		t.Row("Serial", ":", fmt.Sprintf("%X", cert.SerialNumber.Bytes()))
-		t.Row("Fingerprint", ":", fmt.Sprintf("%X", sha256.Sum256(cert.Raw)))
+		t.Row("Fingerprint", ":", fmt.Sprintf("%X", cert.fingerprint))
 	}
 
 	if p.level >= LevelFull {

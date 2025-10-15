@@ -8,7 +8,7 @@ import (
 
 type PEMBundlePrinter struct{}
 
-func (p PEMBundlePrinter) Print(bundle Bundle) (string, error) {
+func (p PEMBundlePrinter) Print(bundle Bundle, roots *Roots) (string, error) {
 	var s strings.Builder
 
 	for _, cert := range bundle {

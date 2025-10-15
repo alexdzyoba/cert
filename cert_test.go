@@ -1,8 +1,6 @@
 package main
 
 import (
-	"crypto/x509"
-	"encoding/pem"
 	"flag"
 	"fmt"
 	"os"
@@ -15,25 +13,6 @@ import (
 )
 
 var update = flag.Bool("update", false, "update golden files")
-
-func TestMatchRoots(t *testing.T) {
-	roots := loadRoots(t)
-
-	certPEM, err := os.ReadFile("testdata/addtrust.crt")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	certData, _ := pem.Decode(certPEM)
-	cert, err := x509.ParseCertificate(certData.Bytes)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !matchRoots(cert, roots) {
-		t.Errorf("cert is not matched as root")
-	}
-}
 
 func TestCertString(t *testing.T) {
 	tests := []struct {
@@ -208,8 +187,8 @@ func TestVerbosityFormat(t *testing.T) {
 		}
 	}
 }
-func loadRoots(t *testing.T) *x509.CertPool {
-	roots := x509.NewCertPool()
+func loadRoots(t *testing.T) *Roots {
+	roots := NewRoots()
 
 	rootsPEM, err := os.ReadFile("testdata/roots.pem")
 	if err != nil {

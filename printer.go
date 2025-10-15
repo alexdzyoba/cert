@@ -1,5 +1,5 @@
 package main
 
 type BundlePrinter interface {
-	Print(Bundle) (string, error)
+	Print(Bundle, *Roots) (string, error)
 }
