@@ -1,8 +1,13 @@
+name: Release
+
 on:
   push:
     tags:
       - 'v*'
-name: Release
+
+permissions:
+  contents: write
+
 jobs:
   release:
     name: Release with goreleaser
@@ -10,9 +15,17 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v4
-    - name: goreleaser
-      uses: docker://goreleaser/goreleaser
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 'stable'
+
+    - name: Run goreleaser
+      uses: goreleaser/goreleaser-action@v6
       with:
         args: release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
