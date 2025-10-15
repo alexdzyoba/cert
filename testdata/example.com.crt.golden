@@ -1,0 +1,16 @@
+--- [1mexample.com[0m [32m[OK][0m ------------------------------------------
+Subject: example.com
+SANs:    example.com, *.example.com
+Issuer:  Cloudflare TLS Issuing ECC CA 3, SSL Corporation, US
+Valid:   3.0 months, expires in 2.9 months (2026-05-14) [32m[OK][0m
+
+--- [1mCloudflare TLS Issuing ECC CA 3[0m [32m[OK][0m ----------------------
+Subject: Cloudflare TLS Issuing ECC CA 3, SSL Corporation, US
+Issuer:  SSL.com TLS Transit ECC CA R2, SSL Corporation, US
+Valid:   10.0 years, expires in 9.3 years (2035-05-27) [32m[OK][0m
+
+--- [1mSSL.com TLS Transit ECC CA R2[0m [32m[OK][0m ------------------------
+Subject: SSL.com TLS Transit ECC CA R2, SSL Corporation, US
+Issuer:  AAA Certificate Services, Comodo CA Limited, GB
+Valid:   4.5 years, expires in 2.9 years (2028-12-31) [32m[OK][0m
+

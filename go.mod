@@ -1,14 +1,13 @@
 module github.com/alexdzyoba/cert
 
-go 1.13
+go 1.24.0
+
+require github.com/spf13/pflag v1.0.10
 
 require (
-	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
-	github.com/charmbracelet/lipgloss v1.1.0
-	github.com/charmbracelet/log v0.4.2
-	github.com/fatih/color v1.9.0
-	github.com/pkg/errors v0.9.1
-	github.com/sergi/go-diff v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.7
-	github.com/stretchr/testify v1.10.0
+	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/rs/zerolog v1.34.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
 )

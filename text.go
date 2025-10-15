@@ -1,180 +1,237 @@
 package main
 
 import (
-	"crypto/sha256"
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/rsa"
+	"crypto/x509"
 	"crypto/x509/pkix"
 	"fmt"
-	"math"
 	"strings"
+	"text/tabwriter"
 	"time"
-
-	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/list"
-	"github.com/charmbracelet/lipgloss/table"
 )
-
-type TextBundlePrinter struct {
-	level Level
-	now   time.Time
-}
-
-type Level int
 
 const (
-	LevelBase = iota
-	LevelVerbose
-	LevelFull
+	headerWidth = 80
+	ansiBold    = "\033[1m"
+	ansiGreen   = "\033[32m"
+	ansiRed     = "\033[31m"
+	ansiReset   = "\033[0m"
+
+	maxCompactSANs = 3
+	maxVerboseSANs = 20
 )
 
-const DefaultListLimit = 5
-
-var (
-	cell        = lipgloss.NewStyle().Padding(0, 1)
-	box         = cell.Border(lipgloss.NormalBorder())
-	wrappedCell = lipgloss.NewStyle().Width(64)
-	red         = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1"))
-	green       = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2"))
-)
-
-type Opt func(*TextBundlePrinter)
-
-func WithLevel(l Level) Opt {
-	return func(p *TextBundlePrinter) {
-		p.level = l
-	}
+type TextFormatter struct {
+	Verbosity OutputLevel
 }
 
-func WithTime(t time.Time) Opt {
-	return func(p *TextBundlePrinter) {
-		p.now = t
+func (f *TextFormatter) Format(report Report) (string, error) {
+	var s strings.Builder
+	w := tabwriter.NewWriter(&s, 0, 0, 1, ' ', 0)
+	for _, record := range report {
+		// Flush tabwriter before writing header directly to s,
+		// so the header line isn't mangled by tab alignment.
+		if err := w.Flush(); err != nil {
+			return "", fmt.Errorf("tabwriter failed: %w", err)
+		}
+		f.formatHeader(&s, record)
+		f.formatFields(w, record)
 	}
+
+	if err := w.Flush(); err != nil {
+		return "", fmt.Errorf("tabwriter failed: %w", err)
+	}
+
+	return s.String(), nil
 }
 
-func NewTextBundlePrinter(opts ...Opt) *TextBundlePrinter {
-	p := new(TextBundlePrinter)
-	for _, opt := range opts {
-		opt(p)
+func (f *TextFormatter) formatHeader(s *strings.Builder, record *Record) {
+	name := record.Cert.inner.Subject.CommonName
+	if name == "" {
+		// Some root CAs don't have a CN but OU
+		if len(record.Cert.inner.Subject.OrganizationalUnit) > 0 {
+			name = record.Cert.inner.Subject.OrganizationalUnit[0]
+		} else {
+			name = record.Cert.inner.Subject.String()
+		}
 	}
-	return p
+
+	status := printBool(record.Error == nil)
+	prefix := fmt.Sprintf("--- %s%s%s %s ", ansiBold, name, ansiReset, status)
+	pad := max(headerWidth-len(prefix), 3)
+	fmt.Fprintf(s, "%s%s\n", prefix, strings.Repeat("-", pad))
 }
 
-func (p TextBundlePrinter) Print(bundle Bundle) (string, error) {
-	var b strings.Builder
-	for _, c := range bundle {
-		fmt.Fprintln(&b, p.printCert(c))
+func (f *TextFormatter) formatFields(w *tabwriter.Writer, record *Record) {
+	cert := record.Cert.inner
+
+	fmt.Fprintf(w, "Subject:\t%s\n", f.formatName(cert.Subject))
+	if sans := f.formatSANs(cert); sans != "" {
+		fmt.Fprintf(w, "SANs:\t%s\n", sans)
 	}
-	return b.String(), nil
-}
 
-func (p TextBundlePrinter) printCert(cert *Cert) string {
-	var b strings.Builder
+	fmt.Fprintf(w, "Issuer:\t%s\n", f.formatName(cert.Issuer))
 
-	b.WriteString(
-		box.Render(
-			cert.Subject.CommonName +
-				" " +
-				printBool(cert.verified)),
-	)
-	t := table.New().
-		Border(lipgloss.Border{}).
-		StyleFunc(func(_, _ int) lipgloss.Style {
-			return cell
-		})
-
-	if !cert.verified {
-		t.Row("Verification error", ":", red.Render(cert.verifyErr.Error()))
+	if record.Error != nil {
+		fmt.Fprintf(w, "Error:\t%v\n", record.Error)
 	}
-	t.Row("Subject", ":", p.formatSubject(cert))
-	t.Row("Issuer", ":", p.formatName(cert.Issuer))
-	if p.level >= LevelVerbose {
-		t.Row("Valid", ":", printBool(cert.valid))
-		t.Row("  From", ":", cert.NotBefore.Format(time.RFC3339))
-		t.Row("  To", ":", cert.NotAfter.Format(time.RFC3339))
+
+	if f.Verbosity >= VerboseOutput {
+		fmt.Fprintf(w, "Not Before:\t%s %s\n", cert.NotBefore.String(), printBool(record.Validity.NotBeforeOK))
+		fmt.Fprintf(w, "Not After:\t%s %s\n", cert.NotAfter.String(), printBool(record.Validity.NotAfterOK))
 	} else {
-		t.Row("Valid", ":", p.formatValidity(cert))
-	}
-	t.Row("Features", ":", p.buildFeatures(cert))
-	if p.level >= LevelVerbose {
-		// Render serial as bytes for compatibility with openssl
-		t.Row("Serial", ":", fmt.Sprintf("%X", cert.SerialNumber.Bytes()))
-		t.Row("Fingerprint", ":", fmt.Sprintf("%X", sha256.Sum256(cert.Raw)))
+		fmt.Fprintf(w, "Valid:\t%s\n", f.formatValidity(record))
 	}
 
-	if p.level >= LevelFull {
-		t.Row("Signature", ":", wrappedCell.Render(fmt.Sprintf("%X", cert.Signature)))
+	if f.Verbosity >= VerboseOutput {
+		fmt.Fprintf(w, "Fingerprint:\t%X\n", record.Cert.fingerprint)
+		fmt.Fprintf(w, "Key:\t%s\n", formatKeyInfo(cert))
+		fmt.Fprintf(w, "Signature:\t%s\n", cert.SignatureAlgorithm)
 	}
 
-	b.WriteString(t.Render())
-	if len(cert.DNSNames) > 0 {
-		b.WriteString("\n")
-		b.WriteString(cell.Render("DNS SANs:\n" + p.formatList(cert.DNSNames)))
-		b.WriteString("\n")
+	if f.Verbosity >= FullOutput {
+		if ku := formatKeyUsage(cert.KeyUsage); ku != "" {
+			fmt.Fprintf(w, "Key Usage:\t%s\n", ku)
+		}
+		if eku := formatExtKeyUsage(cert.ExtKeyUsage); eku != "" {
+			fmt.Fprintf(w, "Ext Key Usage:\t%s\n", eku)
+		}
 	}
 
-	return b.String()
+	fmt.Fprintf(w, "\n")
 }
 
-func (p TextBundlePrinter) formatValidity(cert *Cert) string {
-	if cert.expiresIn < 0 {
-		return fmt.Sprintf("%v, expired on %v %s", cert.validity, cert.NotAfter.Format("2006-01-02"), printBool(cert.valid))
-	}
-	return fmt.Sprintf("%v, expires in %v (%v) %s", cert.validity, cert.expiresIn, cert.NotAfter.Format("2006-01-02"), printBool(cert.valid))
-}
-
-func (p TextBundlePrinter) buildFeatures(cert *Cert) string {
-	features := []string{}
-	if cert.isRoot {
-		features = append(features, "ROOT")
-	}
-	if cert.IsCA {
-		features = append(features, "CA")
-	}
-	if len(cert.DNSNames) > 0 {
-		features = append(features, "DNS SANs")
-	}
-	if len(cert.EmailAddresses) > 0 {
-		features = append(features, "Email SANs")
-	}
-	if len(cert.IPAddresses) > 0 {
-		features = append(features, "IP SANs")
-	}
-	if len(cert.URIs) > 0 {
-		features = append(features, "URI SANs")
-	}
-
-	return strings.Join(features, ", ")
-}
-
-func (p TextBundlePrinter) formatSubject(cert *Cert) string {
-	if p.level >= LevelVerbose {
-		return cert.Subject.String()
-	}
-
-	subject := p.formatName(cert.Subject)
-
-	sans := []string{}
-	if len(cert.DNSNames) > 0 {
-		sans = append(sans, fmt.Sprintf("+%d DNS SANs", len(cert.DNSNames)))
-	}
-	if len(cert.EmailAddresses) > 0 {
-		sans = append(sans, fmt.Sprintf("+%d Email SANs", len(cert.EmailAddresses)))
-	}
-	if len(cert.IPAddresses) > 0 {
-		sans = append(sans, fmt.Sprintf("+%d IP SANs", len(cert.IPAddresses)))
-	}
-	if len(cert.URIs) > 0 {
-		sans = append(sans, fmt.Sprintf("+%d URI SANs", len(cert.URIs)))
-	}
+func (f *TextFormatter) formatSANs(cert *x509.Certificate) string {
+	sans := f.collectSANs(cert)
 
 	if len(sans) == 0 {
-		return subject
+		return ""
 	}
 
-	return fmt.Sprintf("%s (%v)", subject, strings.Join(sans, " "))
+	var maxSANs int
+	switch f.Verbosity {
+	case FullOutput:
+		maxSANs = len(sans)
+	case VerboseOutput:
+		maxSANs = maxVerboseSANs
+	default:
+		maxSANs = maxCompactSANs
+	}
+
+	n := min(len(sans), maxSANs)
+	s := strings.Join(sans[:n], ", ")
+	if extra := len(sans) - n; extra > 0 {
+		s += fmt.Sprintf(" (+%d more)", extra)
+	}
+
+	return s
 }
 
-func (p TextBundlePrinter) formatName(name pkix.Name) string {
-	if p.level >= LevelVerbose {
+func (f *TextFormatter) collectSANs(cert *x509.Certificate) []string {
+	if f.Verbosity == CompactOutput {
+		return cert.DNSNames
+	}
+
+	var sans []string
+	for _, dns := range cert.DNSNames {
+		sans = append(sans, "DNS:"+dns)
+	}
+
+	for _, ip := range cert.IPAddresses {
+		sans = append(sans, "IP:"+ip.String())
+	}
+
+	for _, email := range cert.EmailAddresses {
+		sans = append(sans, "Email:"+email)
+	}
+
+	for _, uri := range cert.URIs {
+		sans = append(sans, "URI:"+uri.String())
+	}
+
+	return sans
+}
+
+func formatKeyInfo(cert *x509.Certificate) string {
+	switch pub := cert.PublicKey.(type) {
+	case *rsa.PublicKey:
+		return fmt.Sprintf("RSA %d bits", pub.N.BitLen())
+	case *ecdsa.PublicKey:
+		return fmt.Sprintf("ECDSA %s", pub.Curve.Params().Name)
+	case ed25519.PublicKey:
+		return "Ed25519"
+	default:
+		return fmt.Sprintf("%T", pub)
+	}
+}
+
+var keyUsageNames = [...]struct {
+	bit  x509.KeyUsage
+	name string
+}{
+	{x509.KeyUsageDigitalSignature, "Digital Signature"},
+	{x509.KeyUsageContentCommitment, "Content Commitment"},
+	{x509.KeyUsageKeyEncipherment, "Key Encipherment"},
+	{x509.KeyUsageDataEncipherment, "Data Encipherment"},
+	{x509.KeyUsageKeyAgreement, "Key Agreement"},
+	{x509.KeyUsageCertSign, "Certificate Sign"},
+	{x509.KeyUsageCRLSign, "CRL Sign"},
+	{x509.KeyUsageEncipherOnly, "Encipher Only"},
+	{x509.KeyUsageDecipherOnly, "Decipher Only"},
+}
+
+func formatKeyUsage(ku x509.KeyUsage) string {
+	var names []string
+	for _, entry := range keyUsageNames {
+		if ku&entry.bit != 0 {
+			names = append(names, entry.name)
+		}
+	}
+	return strings.Join(names, ", ")
+}
+
+var extKeyUsageNames = map[x509.ExtKeyUsage]string{
+	x509.ExtKeyUsageAny:                        "Any",
+	x509.ExtKeyUsageServerAuth:                 "Server Authentication",
+	x509.ExtKeyUsageClientAuth:                 "Client Authentication",
+	x509.ExtKeyUsageCodeSigning:                "Code Signing",
+	x509.ExtKeyUsageEmailProtection:            "Email Protection",
+	x509.ExtKeyUsageIPSECEndSystem:             "IPSEC End System",
+	x509.ExtKeyUsageIPSECTunnel:                "IPSEC Tunnel",
+	x509.ExtKeyUsageIPSECUser:                  "IPSEC User",
+	x509.ExtKeyUsageTimeStamping:               "Time Stamping",
+	x509.ExtKeyUsageOCSPSigning:                "OCSP Signing",
+	x509.ExtKeyUsageMicrosoftServerGatedCrypto: "Microsoft Server Gated Crypto",
+	x509.ExtKeyUsageNetscapeServerGatedCrypto:  "Netscape Server Gated Crypto",
+}
+
+func formatExtKeyUsage(eku []x509.ExtKeyUsage) string {
+	var names []string
+	for _, usage := range eku {
+		if name, ok := extKeyUsageNames[usage]; ok {
+			names = append(names, name)
+		} else {
+			names = append(names, fmt.Sprintf("Unknown(%d)", usage))
+		}
+	}
+	return strings.Join(names, ", ")
+}
+
+func (f *TextFormatter) formatValidity(rec *Record) string {
+	v := rec.Validity
+	inner := rec.Cert.inner
+
+	if v.ExpiresIn < 0 {
+		return fmt.Sprintf("%v, expired on %v %s", v.Period, inner.NotAfter.Format("2006-01-02"), printBool(v.OK))
+	}
+
+	return fmt.Sprintf("%v, expires in %v (%v) %s", v.Period, v.ExpiresIn, inner.NotAfter.Format("2006-01-02"), printBool(v.OK))
+}
+
+func (f *TextFormatter) formatName(name pkix.Name) string {
+	if f.Verbosity >= VerboseOutput {
 		return name.String()
 	}
 
@@ -192,29 +249,35 @@ func (p TextBundlePrinter) formatName(name pkix.Name) string {
 	return strings.Join(s, ", ")
 }
 
-func (p TextBundlePrinter) formatList(ss []string) string {
-	items := ss
-	limit := int(math.MaxInt32)
-	if p.level < LevelVerbose {
-		limit = DefaultListLimit
-	}
-
-	if len(ss) > limit {
-		items = ss[:limit]
-	}
-	more := len(ss) - limit
-
-	l := list.New(items).Enumerator(list.Dash)
-	if more > 0 {
-		l.Item(fmt.Sprintf("(... %d more)", more))
-	}
-
-	return l.String()
-}
-
 func printBool(b bool) string {
 	if b {
-		return green.Render("✅")
+		return ansiGreen + "[OK]" + ansiReset
 	}
-	return red.Render("❌")
+	return ansiRed + "[ERR]" + ansiReset
+}
+
+// Duration provides custom time.Duration string serialization
+type Duration time.Duration
+
+func (d Duration) String() string {
+	const (
+		day   = 24
+		week  = 7 * day
+		month = 30 * day
+		year  = 365 * day
+	)
+
+	h := time.Duration(d).Hours()
+	switch {
+	case h >= year:
+		return fmt.Sprintf("%.1f years", h/year)
+	case h >= month:
+		return fmt.Sprintf("%.1f months", h/month)
+	case h >= week:
+		return fmt.Sprintf("%.1f weeks", h/week)
+	case h >= day:
+		return fmt.Sprintf("%.1f days", h/day)
+	default:
+		return time.Duration(d).String()
+	}
 }

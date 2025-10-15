@@ -11,21 +11,19 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: 'stable'
-      id: go
-
     - name: Check out code
       uses: actions/checkout@v4
 
-    - name: Download dependencies
-      run: go mod download
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 'stable'
 
     - name: Build
       run: go build -v .
 
+    - name: Vet
+      run: go vet ./...
+
     - name: Test
-      run: go test -v .
+      run: go test -v ./...
