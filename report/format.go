@@ -1,4 +1,4 @@
-package format
+package report
 
 import "fmt"
 
@@ -16,4 +16,13 @@ func NewOutputLevel(n int) (OutputLevel, error) {
 	}
 
 	return OutputLevel(n), nil
+}
+
+type FormatOptions struct {
+	Verbosity  OutputLevel
+	AppendRoot bool
+}
+
+func (r *Report) Format(opts *FormatOptions) string {
+	return ""
 }

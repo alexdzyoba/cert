@@ -9,8 +9,9 @@ import (
 	"github.com/araddon/dateparse"
 	"github.com/spf13/pflag"
 
-	"github.com/alexdzyoba/cert/format"
-	"github.com/alexdzyoba/cert/verify"
+	"github.com/alexdzyoba/cert/certificate"
+	"github.com/alexdzyoba/cert/pem"
+	"github.com/alexdzyoba/cert/report"
 )
 
 func main() {
@@ -26,7 +27,16 @@ func main() {
 		log.Fatalf("failed to load from %v: %v", config.Source, err)
 	}
 
-	report, err := verify.Verify(bundle, &verify.Options{
+	output := makeOutput(config, bundle)
+	fmt.Println(output)
+}
+
+func makeOutput(config *Config, bundle *certificate.Bundle) string {
+	if config.Format == "pem" {
+		return pem.Format(bundle)
+	}
+
+	report_, err := report.Verify(bundle, &report.VerifyOptions{
 		Time:      config.Time,
 		RootsPath: config.RootsPath,
 	})
@@ -34,12 +44,10 @@ func main() {
 		log.Fatalf("failed to verify: %v", err)
 	}
 
-	formatter := format.NewTextFormatter(&format.TextFormatterOptions{
+	return report_.Format(&report.FormatOptions{
 		Verbosity:  config.Verbosity,
 		AppendRoot: config.AppendRoot,
 	})
-	output := formatter.Format(report)
-	fmt.Println(output)
 }
 
 func ParseArguments() (*Config, error) {
@@ -56,7 +64,7 @@ func ParseArguments() (*Config, error) {
 	appendRootFlag := pflag.BoolP("with-root", "R", false, "Print root certificate used during verification.")
 	pflag.Parse()
 
-	// Validate we have exactly one positional argument
+	// Validate exactly one positional argument
 	args := pflag.Args()
 	if len(args) == 0 {
 		return nil, fmt.Errorf("missing required argument: <file or URL>")
@@ -80,7 +88,7 @@ func ParseArguments() (*Config, error) {
 	}
 
 	// Parse output level
-	outputLevel, err := format.NewOutputLevel(*verbosityFlag)
+	outputLevel, err := report.NewOutputLevel(*verbosityFlag)
 	if err != nil {
 		return nil, err
 	}

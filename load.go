@@ -1,5 +1,7 @@
 package main
 
-func Load(source string) (*Bundle, error) {
+import "github.com/alexdzyoba/cert/certificate"
+
+func Load(source string) (*certificate.Bundle, error) {
 	return nil, nil
 }
