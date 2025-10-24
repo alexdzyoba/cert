@@ -9,6 +9,7 @@ import (
 	"github.com/araddon/dateparse"
 	"github.com/spf13/pflag"
 
+	"github.com/alexdzyoba/cert/format"
 	"github.com/alexdzyoba/cert/verify"
 )
 
@@ -33,10 +34,11 @@ func main() {
 		log.Fatalf("failed to verify: %v", err)
 	}
 
-	output := Format(report, &FormatOpts{
+	formatter := format.NewTextFormatter(&format.TextFormatterOptions{
 		Verbosity:  config.Verbosity,
 		AppendRoot: config.AppendRoot,
 	})
+	output := formatter.Format(report)
 	fmt.Println(output)
 }
 
@@ -78,7 +80,7 @@ func ParseArguments() (*Config, error) {
 	}
 
 	// Parse output level
-	outputLevel, err := NewOutputLevel(*verbosityFlag)
+	outputLevel, err := format.NewOutputLevel(*verbosityFlag)
 	if err != nil {
 		return nil, err
 	}

@@ -1,9 +1,9 @@
 package format
 
-import "github.com/alexdzyoba/cert/certificate"
+import "github.com/alexdzyoba/cert/verify"
 
 type Formatter interface {
-	Format(*certificate.Bundle) string
+	Format(*verify.Report) string
 }
 
 // TODO: map of supported formats?
