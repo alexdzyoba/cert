@@ -6,7 +6,7 @@ import (
 
 type Config struct {
 	Source     string
-	Format     string
+	Format     Format
 	Time       time.Time
 	Verbosity  OutputLevel
 	RootsPath  string

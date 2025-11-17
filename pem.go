@@ -30,12 +30,15 @@ func (p *PEMParser) Blocks() iter.Seq[[]byte] {
 	}
 }
 
-func PEMFormat(bundle *Bundle) (string, error) {
+type PEMFormatter struct{}
+
+func (f *PEMFormatter) Format(report *Report) (string, error) {
 	var b strings.Builder
-	for _, cert := range *bundle {
+	for _, rec := range *report {
+		cert := rec.Cert
 		err := pem.Encode(&b, &pem.Block{
 			Type:  PEMCertType,
-			Bytes: cert.raw.Raw,
+			Bytes: cert.Bytes(),
 		})
 		if err != nil {
 			return "", fmt.Errorf("encoding to PEM: %w", err)

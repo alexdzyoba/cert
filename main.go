@@ -23,15 +23,6 @@ func main() {
 		log.Fatalf("failed to load from %v: %v", config.Source, err)
 	}
 
-	if config.Format == "pem" {
-		output, err := PEMFormat(bundle)
-		if err != nil {
-			log.Fatalf("PEM formatting: %v", err)
-		}
-		fmt.Println(output)
-		return
-	}
-
 	report, err := Verify(bundle, &VerifyOptions{
 		Time:      config.Time,
 		RootsPath: config.RootsPath,
@@ -40,10 +31,28 @@ func main() {
 		log.Fatalf("failed to verify: %v", err)
 	}
 
-	output := report.Format(&FormatOptions{
-		Verbosity:  config.Verbosity,
-		AppendRoot: config.AppendRoot,
-	})
+	Print(report, config)
+}
+
+func Print(report *Report, config *Config) {
+	var f Formatter
+
+	switch config.Format {
+	case FormatPEM:
+		f = &PEMFormatter{}
+	case FormatText:
+		f = &TextFormatter{
+			Verbosity:  config.Verbosity,
+			AppendRoot: config.AppendRoot,
+		}
+	default:
+		log.Fatalf("unsupported format %v", config.Format)
+	}
+
+	output, err := f.Format(report)
+	if err != nil {
+		log.Fatalf("formatting: %v", err)
+	}
 
 	fmt.Println(output)
 }
@@ -55,7 +64,7 @@ func ParseArguments() (*Config, error) {
 		pflag.PrintDefaults()
 	}
 
-	formatFlag := pflag.StringP("format", "f", "text", "Output format - text, pem.")
+	format := FormatP("format", "f", "text", "Output format - text, pem.")
 	timeFlag := pflag.StringP("time", "t", "", "Override date and time for validation.")
 	verbosityFlag := pflag.CountP("verbose", "v", "Increase output verbosity. Can be specified multiple times.")
 	rootsFlag := pflag.StringP("roots", "r", "", "Path to custom roots bundle.")
@@ -72,8 +81,6 @@ func ParseArguments() (*Config, error) {
 	}
 
 	source := args[0]
-
-	// TODO: validate format flag
 
 	// Use current time by default
 	t := time.Now()
@@ -93,7 +100,7 @@ func ParseArguments() (*Config, error) {
 
 	return &Config{
 		Source:     source,
-		Format:     *formatFlag,
+		Format:     *format,
 		Time:       t,
 		Verbosity:  outputLevel,
 		RootsPath:  *rootsFlag,

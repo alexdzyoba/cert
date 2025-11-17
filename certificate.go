@@ -7,22 +7,26 @@ import (
 )
 
 type Certificate struct {
-	raw         *x509.Certificate
+	inner       *x509.Certificate
 	fingerprint [32]byte
 }
 
 // NewCertificate creates a certificate from DER-encoded data block
 func NewCertificate(data []byte) (*Certificate, error) {
-	raw, err := x509.ParseCertificate(data)
+	inner, err := x509.ParseCertificate(data)
 	if err != nil {
 		return nil, fmt.Errorf("parse certificate: %w", err)
 	}
-	return NewCertificateFromX509(raw)
+	return NewCertificateFromX509(inner)
 }
 
-func NewCertificateFromX509(raw *x509.Certificate) (*Certificate, error) {
-	fingerprint := sha256.Sum256(raw.Raw)
-	return &Certificate{raw, fingerprint}, nil
+func NewCertificateFromX509(inner *x509.Certificate) (*Certificate, error) {
+	fingerprint := sha256.Sum256(inner.Raw)
+	return &Certificate{inner, fingerprint}, nil
+}
+
+func (c *Certificate) Bytes() []byte {
+	return c.inner.Raw
 }
 
 type Bundle []*Certificate
