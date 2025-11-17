@@ -8,10 +8,6 @@ import (
 
 	"github.com/araddon/dateparse"
 	"github.com/spf13/pflag"
-
-	"github.com/alexdzyoba/cert/certificate"
-	"github.com/alexdzyoba/cert/pem"
-	"github.com/alexdzyoba/cert/report"
 )
 
 func main() {
@@ -27,16 +23,16 @@ func main() {
 		log.Fatalf("failed to load from %v: %v", config.Source, err)
 	}
 
-	output := makeOutput(config, bundle)
-	fmt.Println(output)
-}
-
-func makeOutput(config *Config, bundle *certificate.Bundle) string {
 	if config.Format == "pem" {
-		return pem.Format(bundle)
+		output, err := PEMFormat(bundle)
+		if err != nil {
+			log.Fatalf("PEM formatting: %v", err)
+		}
+		fmt.Println(output)
+		return
 	}
 
-	report_, err := report.Verify(bundle, &report.VerifyOptions{
+	report, err := Verify(bundle, &VerifyOptions{
 		Time:      config.Time,
 		RootsPath: config.RootsPath,
 	})
@@ -44,10 +40,12 @@ func makeOutput(config *Config, bundle *certificate.Bundle) string {
 		log.Fatalf("failed to verify: %v", err)
 	}
 
-	return report_.Format(&report.FormatOptions{
+	output := report.Format(&FormatOptions{
 		Verbosity:  config.Verbosity,
 		AppendRoot: config.AppendRoot,
 	})
+
+	fmt.Println(output)
 }
 
 func ParseArguments() (*Config, error) {
@@ -88,7 +86,7 @@ func ParseArguments() (*Config, error) {
 	}
 
 	// Parse output level
-	outputLevel, err := report.NewOutputLevel(*verbosityFlag)
+	outputLevel, err := NewOutputLevel(*verbosityFlag)
 	if err != nil {
 		return nil, err
 	}
