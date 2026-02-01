@@ -19,11 +19,11 @@ func TestBuildTLSAddr(t *testing.T) {
 	for _, c := range testCases {
 		got, err := buildTLSAddr(c.input)
 		if got != c.want {
-			t.Errorf("addrFromString(%v) == %v, want %v", c.input, got, c.want)
+			t.Errorf("buildTLSAddr(%v) == %v, want %v", c.input, got, c.want)
 		}
 
 		if (err != nil) != c.wantErr {
-			t.Errorf("addrFromString(%v) expected error", c.input)
+			t.Errorf("buildTLSAddr(%v) expected error", c.input)
 		}
 	}
 }

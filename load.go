@@ -12,12 +12,12 @@ import (
 	"time"
 )
 
-const (
-	timeout = 5 * time.Second
-)
+// Timeout is the default timeout for TLS connections when loading certificates from URLs.
+var Timeout = 5 * time.Second
 
-// Load gets the bundle from source
-func Load(source string) (*Bundle, error) {
+// Load loads certificates from a file path, stdin ("-"), or URL.
+// If the source is not a valid file, it attempts to connect via TLS.
+func Load(source string) (Bundle, error) {
 	var (
 		f   *os.File
 		err error
@@ -31,36 +31,54 @@ func Load(source string) (*Bundle, error) {
 
 	if errors.Is(err, os.ErrNotExist) {
 		return fromURL(source)
-	} else {
+	} else if err == nil {
 		defer f.Close()
 		return fromReader(f)
+	} else {
+		return nil, fmt.Errorf("open %q: %w", source, err)
 	}
 }
 
-func fromReader(r io.Reader) (*Bundle, error) {
+// LoadMulti loads and combines certificates from multiple sources.
+func LoadMulti(sources []string) (Bundle, error) {
+	var combined Bundle
+	for _, source := range sources {
+		bundle, err := Load(source)
+		if err != nil {
+			return nil, fmt.Errorf("load from %q: %w", source, err)
+		}
+
+		combined = append(combined, bundle...)
+	}
+	return combined, nil
+}
+
+func fromReader(r io.Reader) (Bundle, error) {
 	data, err := io.ReadAll(r)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read: %w", err)
 	}
 
 	var bundle Bundle
-	for block := range NewPEMParser(data).Blocks() {
+	i := 0
+	for block := range PEMBlocks(data) {
 		cert, err := NewCertificate(block)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("certificate %d: %w", i, err)
 		}
 		bundle = append(bundle, cert)
+		i++
 	}
-	return &bundle, nil
+	return bundle, nil
 }
 
-func fromURL(source string) (*Bundle, error) {
+func fromURL(source string) (Bundle, error) {
 	addr, err := buildTLSAddr(source)
 	if err != nil {
 		return nil, fmt.Errorf("build TLS address: %w", err)
 	}
 
-	dialer := &net.Dialer{Timeout: timeout}
+	dialer := &net.Dialer{Timeout: Timeout}
 	conn, err := tls.DialWithDialer(dialer, "tcp", addr, nil)
 	if err != nil {
 		return nil, fmt.Errorf("connect to %q: %w", source, err)
@@ -75,7 +93,7 @@ func fromURL(source string) (*Bundle, error) {
 		bundle = append(bundle, cert)
 	}
 
-	return &bundle, nil
+	return bundle, nil
 }
 
 // buildTLSAddr creates address from source suitable for tls.DialWithDialer

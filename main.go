@@ -23,38 +23,26 @@ func main() {
 		log.Fatalf("failed to load from %v: %v", config.Source, err)
 	}
 
+	roots, err := LoadMulti(config.RootsPath)
+	if err != nil {
+		log.Fatalf("failed to load roots: %v", err)
+	}
+
+	intermediates, err := LoadMulti(config.IntermediatePath)
+	if err != nil {
+		log.Fatalf("failed to load intermediates: %v", err)
+	}
+
 	report, err := Verify(bundle, &VerifyOptions{
-		Time:      config.Time,
-		RootsPath: config.RootsPath,
+		Time:          config.Time,
+		Roots:         roots,
+		Intermediates: intermediates,
 	})
 	if err != nil {
 		log.Fatalf("failed to verify: %v", err)
 	}
 
 	Print(report, config)
-}
-
-func Print(report *Report, config *Config) {
-	var f Formatter
-
-	switch config.Format {
-	case FormatPEM:
-		f = &PEMFormatter{}
-	case FormatText:
-		f = &TextFormatter{
-			Verbosity:  config.Verbosity,
-			AppendRoot: config.AppendRoot,
-		}
-	default:
-		log.Fatalf("unsupported format %v", config.Format)
-	}
-
-	output, err := f.Format(report)
-	if err != nil {
-		log.Fatalf("formatting: %v", err)
-	}
-
-	fmt.Println(output)
 }
 
 func ParseArguments() (*Config, error) {
@@ -67,8 +55,8 @@ func ParseArguments() (*Config, error) {
 	format := FormatP("format", "f", "text", "Output format - text, pem.")
 	timeFlag := pflag.StringP("time", "t", "", "Override date and time for validation.")
 	verbosityFlag := pflag.CountP("verbose", "v", "Increase output verbosity. Can be specified multiple times.")
-	rootsFlag := pflag.StringP("roots", "r", "", "Path to custom roots bundle.")
-	appendRootFlag := pflag.BoolP("with-root", "R", false, "Print root certificate used during verification.")
+	rootsFlag := pflag.StringSliceP("roots", "r", nil, "Path to custom roots. Can be a single certificate or a bundle. Can be specified multiple times.")
+	intermediatesFlag := pflag.StringSliceP("intermediates", "i", nil, "Paths to intermediates. Can be a single certificate or a bundle. Can be specified multiple times.")
 	pflag.Parse()
 
 	// Validate exactly one positional argument
@@ -99,11 +87,33 @@ func ParseArguments() (*Config, error) {
 	}
 
 	return &Config{
-		Source:     source,
-		Format:     *format,
-		Time:       t,
-		Verbosity:  outputLevel,
-		RootsPath:  *rootsFlag,
-		AppendRoot: *appendRootFlag,
+		Source:           source,
+		Format:           *format,
+		Time:             t,
+		Verbosity:        outputLevel,
+		RootsPath:        *rootsFlag,
+		IntermediatePath: *intermediatesFlag,
 	}, nil
+}
+
+func Print(report Report, config *Config) {
+	var f Formatter
+
+	switch config.Format {
+	case FormatPEM:
+		f = &PEMFormatter{}
+	case FormatText:
+		f = &TextFormatter{
+			Verbosity: config.Verbosity,
+		}
+	default:
+		log.Fatalf("unsupported format %v", config.Format)
+	}
+
+	output, err := f.Format(report)
+	if err != nil {
+		log.Fatalf("formatting: %v", err)
+	}
+
+	fmt.Println(output)
 }
