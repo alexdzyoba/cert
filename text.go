@@ -73,8 +73,8 @@ func (f *TextFormatter) formatFields(w *tabwriter.Writer, record *Record) {
 	}
 
 	if f.Verbosity >= VerboseOutput {
-		fmt.Fprintf(w, "Not Before:\t%s\n", cert.NotBefore.String())
-		fmt.Fprintf(w, "Not After:\t%s\n", cert.NotAfter.String())
+		fmt.Fprintf(w, "Not Before:\t%s %s\n", cert.NotBefore.String(), printBool(record.Validity.NotBeforeOK))
+		fmt.Fprintf(w, "Not After:\t%s %s\n", cert.NotAfter.String(), printBool(record.Validity.NotAfterOK))
 	} else {
 		fmt.Fprintf(w, "Valid:\t%s\n", f.formatValidity(record))
 	}
@@ -214,11 +214,14 @@ func formatExtKeyUsage(eku []x509.ExtKeyUsage) string {
 }
 
 func (f *TextFormatter) formatValidity(rec *Record) string {
+	v := rec.Validity
 	inner := rec.Cert.inner
-	if rec.ExpiresIn < 0 {
-		return fmt.Sprintf("%v, expired on %v %s", rec.Validity, inner.NotAfter.Format("2006-01-02"), printBool(rec.Valid))
+
+	if v.ExpiresIn < 0 {
+		return fmt.Sprintf("%v, expired on %v %s", v.Period, inner.NotAfter.Format("2006-01-02"), printBool(v.OK))
 	}
-	return fmt.Sprintf("%v, expires in %v (%v) %s", rec.Validity, rec.ExpiresIn, inner.NotAfter.Format("2006-01-02"), printBool(rec.Valid))
+
+	return fmt.Sprintf("%v, expires in %v (%v) %s", v.Period, v.ExpiresIn, inner.NotAfter.Format("2006-01-02"), printBool(v.OK))
 }
 
 func (f *TextFormatter) formatName(name pkix.Name) string {

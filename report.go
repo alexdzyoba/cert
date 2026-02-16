@@ -9,22 +9,33 @@ import (
 
 // Record holds verification results for a single certificate.
 type Record struct {
-	Cert      *Certificate
-	Error     error
-	IsRoot    bool
-	Valid     bool
-	Validity  Duration
-	ExpiresIn Duration
+	Cert   *Certificate
+	Error  error
+	IsRoot bool
+
+	Validity Validity
+}
+
+type Validity struct {
+	OK          bool
+	NotBeforeOK bool
+	NotAfterOK  bool
+	Period      Duration
+	ExpiresIn   Duration
 }
 
 func NewRecord(cert *Certificate, err error, opts *VerifyOptions) *Record {
 	return &Record{
-		Cert:      cert,
-		Error:     err,
-		IsRoot:    isRootCert(cert, opts.Roots),
-		Valid:     isValid(cert.inner, opts.Time),
-		Validity:  validity(cert.inner),
-		ExpiresIn: expiresIn(cert.inner, opts.Time),
+		Cert:   cert,
+		Error:  err,
+		IsRoot: isRootCert(cert, opts.Roots),
+		Validity: Validity{
+			OK:          isValid(cert.inner, opts.Time),
+			NotBeforeOK: opts.Time.After(cert.inner.NotBefore),
+			NotAfterOK:  opts.Time.Before(cert.inner.NotAfter),
+			Period:      validity(cert.inner),
+			ExpiresIn:   expiresIn(cert.inner, opts.Time),
+		},
 	}
 }
 
@@ -42,9 +53,9 @@ func (r *Record) String() string {
 		parts = append(parts, "  Error: <nil>")
 	}
 	parts = append(parts, fmt.Sprintf("  IsRoot: %t", r.IsRoot))
-	parts = append(parts, fmt.Sprintf("  Valid: %t", r.Valid))
-	parts = append(parts, fmt.Sprintf("  Validity: %s", r.Validity))
-	parts = append(parts, fmt.Sprintf("  ExpiresIn: %s", r.ExpiresIn))
+	parts = append(parts, fmt.Sprintf("  Valid: %t", r.Validity.OK))
+	parts = append(parts, fmt.Sprintf("  Validity: %s", r.Validity.Period))
+	parts = append(parts, fmt.Sprintf("  ExpiresIn: %s", r.Validity.ExpiresIn))
 	parts = append(parts, "}")
 	return strings.Join(parts, "\n")
 }
