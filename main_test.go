@@ -4,11 +4,53 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
 
 var update = flag.Bool("update", false, "update golden files")
+
+func TestPEMFormat(t *testing.T) {
+	tests := []struct {
+		file string
+	}{
+		{"example.com.crt"},
+	}
+
+	for _, tt := range tests {
+		path := filepath.Join("testdata", tt.file)
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatalf("read %s: %v", path, err)
+		}
+
+		bundle, err := Load(path)
+		if err != nil {
+			t.Fatalf("load: %v", err)
+		}
+
+		var report Report
+		for _, c := range bundle {
+			report = append(report, &Record{Cert: c})
+		}
+
+		f := &PEMFormatter{}
+		got, err := f.Format(report)
+		if err != nil {
+			t.Fatalf("format: %v", err)
+		}
+
+		// Cut trailing newlines for comparison, since some PEM encoders add
+		// them and some don't.
+		want := strings.TrimRight(string(raw), "\n")
+		got = strings.TrimRight(got, "\n")
+		if got != want {
+			t.Errorf("PEM round-trip mismatch for %s\n--- want %d bytes ---\n%s\n--- got %d bytes ---\n%s",
+				tt.file, len(want), want, len(got), got)
+		}
+	}
+}
 
 func TestTextFormat(t *testing.T) {
 	tests := []struct {
