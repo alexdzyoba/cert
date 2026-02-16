@@ -1,11 +1,25 @@
 package main
 
 import (
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/rsa"
+	"crypto/x509"
 	"crypto/x509/pkix"
 	"fmt"
 	"strings"
 	"text/tabwriter"
 	"time"
+)
+
+const (
+	headerWidth = 80
+	ansiGreen   = "\033[32m"
+	ansiRed     = "\033[31m"
+	ansiReset   = "\033[0m"
+
+	maxCompactSANs = 3
+	maxVerboseSANs = 20
 )
 
 type TextFormatter struct {
@@ -32,13 +46,6 @@ func (f *TextFormatter) Format(report Report) (string, error) {
 	return s.String(), nil
 }
 
-const (
-	headerWidth = 80
-	ansiGreen   = "\033[32m"
-	ansiRed     = "\033[31m"
-	ansiReset   = "\033[0m"
-)
-
 func (f *TextFormatter) formatHeader(s *strings.Builder, record *Record) {
 	cn := record.Cert.inner.Subject.CommonName
 	if cn == "" {
@@ -46,30 +53,164 @@ func (f *TextFormatter) formatHeader(s *strings.Builder, record *Record) {
 	}
 
 	status := printBool(record.Error == nil)
-	prefix := fmt.Sprintf("--- %s %s ", status, cn)
+	prefix := fmt.Sprintf("--- %s %s ", cn, status)
 	pad := max(headerWidth-len(prefix), 3)
 	fmt.Fprintf(s, "%s%s\n", prefix, strings.Repeat("-", pad))
 }
 
 func (f *TextFormatter) formatFields(w *tabwriter.Writer, record *Record) {
-	fmt.Fprintf(w, "Subject:\t%s\n", f.formatName(record.Cert.inner.Subject))
-	fmt.Fprintf(w, "Issuer:\t%s\n", f.formatName(record.Cert.inner.Issuer))
-	if f.Verbosity >= VerboseOutput {
-		fmt.Fprintf(w, "Fingerprint:\t%X\n", record.Cert.fingerprint)
+	cert := record.Cert.inner
+
+	fmt.Fprintf(w, "Subject:\t%s\n", f.formatName(cert.Subject))
+	if sans := f.formatSANs(cert); sans != "" {
+		fmt.Fprintf(w, "SANs:\t%s\n", sans)
 	}
+
+	fmt.Fprintf(w, "Issuer:\t%s\n", f.formatName(cert.Issuer))
 
 	if record.Error != nil {
 		fmt.Fprintf(w, "Error:\t%v\n", record.Error)
 	}
 
 	if f.Verbosity >= VerboseOutput {
-		fmt.Fprintf(w, "Not Before:\t%s\n", record.Cert.inner.NotBefore.String())
-		fmt.Fprintf(w, "Not After:\t%s\n", record.Cert.inner.NotAfter.String())
+		fmt.Fprintf(w, "Not Before:\t%s\n", cert.NotBefore.String())
+		fmt.Fprintf(w, "Not After:\t%s\n", cert.NotAfter.String())
 	} else {
 		fmt.Fprintf(w, "Valid:\t%s\n", f.formatValidity(record))
 	}
 
+	if f.Verbosity >= VerboseOutput {
+		fmt.Fprintf(w, "Fingerprint:\t%X\n", record.Cert.fingerprint)
+		fmt.Fprintf(w, "Key:\t%s\n", formatKeyInfo(cert))
+		fmt.Fprintf(w, "Signature:\t%s\n", cert.SignatureAlgorithm)
+	}
+
+	if f.Verbosity >= FullOutput {
+		if ku := formatKeyUsage(cert.KeyUsage); ku != "" {
+			fmt.Fprintf(w, "Key Usage:\t%s\n", ku)
+		}
+		if eku := formatExtKeyUsage(cert.ExtKeyUsage); eku != "" {
+			fmt.Fprintf(w, "Ext Key Usage:\t%s\n", eku)
+		}
+	}
+
 	fmt.Fprintf(w, "\n")
+}
+
+func (f *TextFormatter) formatSANs(cert *x509.Certificate) string {
+	sans := f.collectSANs(cert)
+
+	if len(sans) == 0 {
+		return ""
+	}
+
+	var maxSANs int
+	switch f.Verbosity {
+	case FullOutput:
+		maxSANs = len(sans)
+	case VerboseOutput:
+		maxSANs = maxVerboseSANs
+	default:
+		maxSANs = maxCompactSANs
+	}
+
+	n := min(len(sans), maxSANs)
+	s := strings.Join(sans[:n], ", ")
+	if extra := len(sans) - n; extra > 0 {
+		s += fmt.Sprintf(" (+%d more)", extra)
+	}
+
+	return s
+}
+
+func (f *TextFormatter) collectSANs(cert *x509.Certificate) []string {
+	if f.Verbosity == CompactOutput {
+		return cert.DNSNames
+	}
+
+	var sans []string
+	for _, dns := range cert.DNSNames {
+		sans = append(sans, "DNS:"+dns)
+	}
+
+	for _, ip := range cert.IPAddresses {
+		sans = append(sans, "IP:"+ip.String())
+	}
+
+	for _, email := range cert.EmailAddresses {
+		sans = append(sans, "Email:"+email)
+	}
+
+	for _, uri := range cert.URIs {
+		sans = append(sans, "URI:"+uri.String())
+	}
+
+	return sans
+}
+
+func formatKeyInfo(cert *x509.Certificate) string {
+	switch pub := cert.PublicKey.(type) {
+	case *rsa.PublicKey:
+		return fmt.Sprintf("RSA %d bits", pub.N.BitLen())
+	case *ecdsa.PublicKey:
+		return fmt.Sprintf("ECDSA %s", pub.Curve.Params().Name)
+	case ed25519.PublicKey:
+		return "Ed25519"
+	default:
+		return fmt.Sprintf("%T", pub)
+	}
+}
+
+var keyUsageNames = [...]struct {
+	bit  x509.KeyUsage
+	name string
+}{
+	{x509.KeyUsageDigitalSignature, "Digital Signature"},
+	{x509.KeyUsageContentCommitment, "Content Commitment"},
+	{x509.KeyUsageKeyEncipherment, "Key Encipherment"},
+	{x509.KeyUsageDataEncipherment, "Data Encipherment"},
+	{x509.KeyUsageKeyAgreement, "Key Agreement"},
+	{x509.KeyUsageCertSign, "Certificate Sign"},
+	{x509.KeyUsageCRLSign, "CRL Sign"},
+	{x509.KeyUsageEncipherOnly, "Encipher Only"},
+	{x509.KeyUsageDecipherOnly, "Decipher Only"},
+}
+
+func formatKeyUsage(ku x509.KeyUsage) string {
+	var names []string
+	for _, entry := range keyUsageNames {
+		if ku&entry.bit != 0 {
+			names = append(names, entry.name)
+		}
+	}
+	return strings.Join(names, ", ")
+}
+
+var extKeyUsageNames = map[x509.ExtKeyUsage]string{
+	x509.ExtKeyUsageAny:                        "Any",
+	x509.ExtKeyUsageServerAuth:                 "Server Authentication",
+	x509.ExtKeyUsageClientAuth:                 "Client Authentication",
+	x509.ExtKeyUsageCodeSigning:                "Code Signing",
+	x509.ExtKeyUsageEmailProtection:            "Email Protection",
+	x509.ExtKeyUsageIPSECEndSystem:             "IPSEC End System",
+	x509.ExtKeyUsageIPSECTunnel:                "IPSEC Tunnel",
+	x509.ExtKeyUsageIPSECUser:                  "IPSEC User",
+	x509.ExtKeyUsageTimeStamping:               "Time Stamping",
+	x509.ExtKeyUsageOCSPSigning:                "OCSP Signing",
+	x509.ExtKeyUsageMicrosoftServerGatedCrypto: "Microsoft Server Gated Crypto",
+	x509.ExtKeyUsageNetscapeServerGatedCrypto:  "Netscape Server Gated Crypto",
+}
+
+func formatExtKeyUsage(eku []x509.ExtKeyUsage) string {
+	var names []string
+	for _, usage := range eku {
+		if name, ok := extKeyUsageNames[usage]; ok {
+			names = append(names, name)
+		} else {
+			names = append(names, fmt.Sprintf("Unknown(%d)", usage))
+		}
+	}
+	return strings.Join(names, ", ")
 }
 
 func (f *TextFormatter) formatValidity(rec *Record) string {
