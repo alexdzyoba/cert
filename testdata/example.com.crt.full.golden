@@ -1,0 +1,34 @@
+--- [1mexample.com[0m [32m[OK][0m ------------------------------------------
+Subject:       CN=example.com
+SANs:          DNS:example.com, DNS:*.example.com
+Issuer:        CN=Cloudflare TLS Issuing ECC CA 3,O=SSL Corporation,C=US
+Not Before:    2026-02-13 18:53:48 +0000 UTC [32m[OK][0m
+Not After:     2026-05-14 18:57:50 +0000 UTC [32m[OK][0m
+Fingerprint:   7A70788FE1F5A90E81F7ACBDC16422CB6E5D764BE8D0F4DA9721BA9674AA8BA9
+Key:           ECDSA P-256
+Signature:     ECDSA-SHA256
+Key Usage:     Digital Signature
+Ext Key Usage: Server Authentication
+
+--- [1mCloudflare TLS Issuing ECC CA 3[0m [32m[OK][0m ----------------------
+Subject:       CN=Cloudflare TLS Issuing ECC CA 3,O=SSL Corporation,C=US
+Issuer:        CN=SSL.com TLS Transit ECC CA R2,O=SSL Corporation,C=US
+Not Before:    2025-05-29 19:49:45 +0000 UTC [32m[OK][0m
+Not After:     2035-05-27 19:49:44 +0000 UTC [32m[OK][0m
+Fingerprint:   F15F29ABEF73AA4DD9AB754BAEAE3685BDD3874B46B525071177628685718026
+Key:           ECDSA P-256
+Signature:     ECDSA-SHA384
+Key Usage:     Digital Signature, Certificate Sign, CRL Sign
+Ext Key Usage: Client Authentication, Server Authentication
+
+--- [1mSSL.com TLS Transit ECC CA R2[0m [32m[OK][0m ------------------------
+Subject:       CN=SSL.com TLS Transit ECC CA R2,O=SSL Corporation,C=US
+Issuer:        CN=AAA Certificate Services,O=Comodo CA Limited,L=Salford,ST=Greater Manchester,C=GB
+Not Before:    2024-06-21 00:00:00 +0000 UTC [32m[OK][0m
+Not After:     2028-12-31 23:59:59 +0000 UTC [32m[OK][0m
+Fingerprint:   FE9FB0F783EBB843109AA31DE9DA9864B6542940C307DF23180B11F1F7E108DE
+Key:           ECDSA P-384
+Signature:     SHA256-RSA
+Key Usage:     Digital Signature, Certificate Sign, CRL Sign
+Ext Key Usage: Server Authentication, Client Authentication
+
