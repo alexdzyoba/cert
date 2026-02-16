@@ -14,6 +14,7 @@ import (
 
 const (
 	headerWidth = 80
+	ansiBold    = "\033[1m"
 	ansiGreen   = "\033[32m"
 	ansiRed     = "\033[31m"
 	ansiReset   = "\033[0m"
@@ -53,7 +54,7 @@ func (f *TextFormatter) formatHeader(s *strings.Builder, record *Record) {
 	}
 
 	status := printBool(record.Error == nil)
-	prefix := fmt.Sprintf("--- %s %s ", cn, status)
+	prefix := fmt.Sprintf("--- %s%s%s %s ", ansiBold, cn, ansiReset, status)
 	pad := max(headerWidth-len(prefix), 3)
 	fmt.Fprintf(s, "%s%s\n", prefix, strings.Repeat("-", pad))
 }
