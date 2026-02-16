@@ -48,13 +48,18 @@ func (f *TextFormatter) Format(report Report) (string, error) {
 }
 
 func (f *TextFormatter) formatHeader(s *strings.Builder, record *Record) {
-	cn := record.Cert.inner.Subject.CommonName
-	if cn == "" {
-		cn = record.Cert.inner.Subject.String()
+	name := record.Cert.inner.Subject.CommonName
+	if name == "" {
+		// Some root CAs don't have a CN but OU
+		if len(record.Cert.inner.Subject.OrganizationalUnit) > 0 {
+			name = record.Cert.inner.Subject.OrganizationalUnit[0]
+		} else {
+			name = record.Cert.inner.Subject.String()
+		}
 	}
 
 	status := printBool(record.Error == nil)
-	prefix := fmt.Sprintf("--- %s%s%s %s ", ansiBold, cn, ansiReset, status)
+	prefix := fmt.Sprintf("--- %s%s%s %s ", ansiBold, name, ansiReset, status)
 	pad := max(headerWidth-len(prefix), 3)
 	fmt.Fprintf(s, "%s%s\n", prefix, strings.Repeat("-", pad))
 }
