@@ -4,7 +4,6 @@
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE)
 [![Build status](https://github.com/alexdzyoba/cert/workflows/Go/badge.svg)](https://github.com/alexdzyoba/cert/actions)
 
-
 Handy certificate tool.
 
 Its core purpose is to print certificate(s) in the nice way. If it sees multiple
